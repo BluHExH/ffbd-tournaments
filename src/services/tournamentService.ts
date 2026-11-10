@@ -18,7 +18,7 @@ export interface TournamentFilters {
 }
 
 export function getTournaments(filters: TournamentFilters = {}): Tournament[] {
-  let list = [...tournaments];
+  let list = [...tournaments] as Tournament[];
 
   if (filters.mode && filters.mode !== "all") {
     list = list.filter((t) => t.mode === filters.mode);
@@ -40,7 +40,6 @@ export function getTournaments(filters: TournamentFilters = {}): Tournament[] {
       (t) =>
         t.title.toLowerCase().includes(q) ||
         t.titleBn.includes(q) ||
-        t.description.toLowerCase().includes(q) ||
         t.mode.toLowerCase().includes(q) ||
         t.map.toLowerCase().includes(q)
     );
@@ -50,7 +49,7 @@ export function getTournaments(filters: TournamentFilters = {}): Tournament[] {
   list.sort((a, b) => {
     if (sort === "biggest-prize") return b.prizePool - a.prizePool;
     if (sort === "lowest-entry") return a.entryFee - b.entryFee;
-    const order = { live: 0, upcoming: 1, ended: 2 };
+    const order = { live: 0, upcoming: 1, ended: 2 } as const;
     const oa = order[a.status];
     const ob = order[b.status];
     if (oa !== ob) return oa - ob;
@@ -61,7 +60,7 @@ export function getTournaments(filters: TournamentFilters = {}): Tournament[] {
 }
 
 export function getTournamentBySlug(slug: string): Tournament | undefined {
-  return tournaments.find((t) => t.slug === slug);
+  return (tournaments as Tournament[]).find((t) => t.slug === slug);
 }
 
 export function getRelatedTournaments(slug: string, limit = 3): Tournament[] {

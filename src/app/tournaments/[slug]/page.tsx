@@ -15,10 +15,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!t) return { title: "Tournament not found" };
   return {
     title: `${t.title} | FFBD Tournaments`,
-    description: t.description,
+    description: t.description || t.title,
     openGraph: {
       title: t.title,
-      description: t.description,
+      description: t.description || t.title,
       images: t.cover ? [{ url: t.cover }] : [],
       type: "website",
     },

@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+/* ============================================
+   FFBD TOURNAMENTS — DESIGN TOKENS
+   Extracted / designed for Free Fire + BD gaming aesthetic
+   ============================================ */
+
+:root {
+  /* === 5 Core Colors from logo concept === */
+  /* Logo concept: bold FF orange + deep navy + BD green accents on dark field */
+  --color-primary: #0B1221;      /* Deep navy — main dark surfaces, hero base */
+  --color-secondary: #1A2332;    /* Slightly lighter navy — cards, elevated surfaces */
+  --color-accent: #FF5C00;       /* Free Fire orange — primary CTAs, highlights */
+  --color-neutral-1: #94A3B8;    /* Cool gray — muted text, borders */
+  --color-neutral-2: #F1F5F9;    /* Soft off-white — light section backgrounds */
+
+  /* Derived / semantic */
+  --color-accent-hover: #FF7A33;
+  --color-accent-glow: rgba(255, 92, 0, 0.45);
+  --color-success: #22C55E;
+  --color-warning: #FBBF24;
+  --color-live: #EF4444;
+
+  /* Backgrounds */
+  --bg-hero: linear-gradient(160deg, #0B1221 0%, #121C2E 45%, #0B1221 100%);
+  --bg-section-light: #F8FAFC;
+  --bg-section-white: #FFFFFF;
+  --bg-card-dark: rgba(26, 35, 50, 0.65);
+  --bg-card-light: #FFFFFF;
+
+  /* Text */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+
+  /* Borders & effects */
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 4px 24px -4px rgba(11, 18, 33, 0.12);
+  --shadow-card: 0 8px 32px -8px rgba(11, 18, 33, 0.18);
+  --shadow-glow: 0 0 24px var(--color-accent-glow);
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-chip: 9999px;
+
+  /* Spacing scale: 4 / 8 / 16 / 24 / 40 / 64 / 96 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 64px;
+  --space-7: 96px;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-neutral-1: var(--color-neutral-1);
+  --color-neutral-2: var(--color-neutral-2);
+  --color-success: var(--color-success);
+  --color-live: var(--color-live);
+
+  --font-heading: var(--font-rajdhani);
+  --font-body: var(--font-inter);
+  --font-bangla: var(--font-hind);
+
+  --radius-card: 16px;
+  --radius-button: 12px;
+}
+
+/* Base */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--bg-section-white);
+  color: var(--text-dark);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography helpers */
+.font-heading {
+  font-family: var(--font-rajdhani), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.font-bangla {
+  font-family: var(--font-hind), var(--font-inter), system-ui, sans-serif;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--bg-card-dark);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
+}
+
+/* Button base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-button);
+  font-family: var(--font-rajdhani), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #FF5C00 0%, #FF8A00 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 92, 0, 0.35);
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 28px rgba(255, 92, 0, 0.55);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Light context buttons */
+.btn-primary-light {
+  background: linear-gradient(135deg, #FF5C00 0%, #FF8A00 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 92, 0, 0.3);
+}
+
+.btn-secondary-light {
+  background: transparent;
+  color: var(--text-dark);
+  border: 1.5px solid rgba(15, 23, 42, 0.15);
+}
+
+.btn-secondary-light:hover {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.3);
+}
+
+/* Section alternating */
+.section-dark {
+  background: var(--bg-hero);
+  color: var(--text-primary);
+}
+
+.section-light {
+  background: var(--bg-section-light);
+  color: var(--text-dark);
+}
+
+.section-white {
+  background: var(--bg-section-white);
+  color: var(--text-dark);
+}
+
+/* Card styles */
+.card-dark {
+  background: var(--bg-card-dark);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.card-light {
+  background: var(--bg-card-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Live badge pulse */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { opacity: 0.85; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.live-badge {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Scrollbar thin */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-1);
+  border-radius: 3px;
+}
+
+/* Horizontal scroll hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Reveal animation base (controlled by JS / Framer) */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stat chip */
+.stat-chip {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-chip);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Prize badge */
+.prize-badge {
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  color: #0F172A;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}

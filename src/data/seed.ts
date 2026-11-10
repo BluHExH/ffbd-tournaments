@@ -1,19 +1,22 @@
 export type TournamentMode = "Solo" | "Duo" | "Squad";
 export type TournamentStatus = "live" | "upcoming" | "ended";
+export type MapName = "Bermuda" | "Purgatory" | "Kalahari" | "Alpine";
 
 export interface Tournament {
   id: string;
+  slug: string;
   title: string;
   titleBn: string;
   mode: TournamentMode;
-  entryFee: number; // 0 = free
+  entryFee: number;
   prizePool: number;
   slots: number;
   slotsFilled: number;
   status: TournamentStatus;
-  startAt: string; // ISO
+  startAt: string;
   cover: string;
   region: string;
+  map: MapName;
 }
 
 export interface Team {
@@ -39,6 +42,7 @@ export interface Winner {
 export const tournaments: Tournament[] = [
   {
     id: "t1",
+    slug: "ffbd-weekly-solo-cup",
     title: "FFBD Weekly Solo Cup",
     titleBn: "এফএফবিডি উইকলি সোলো কাপ",
     mode: "Solo",
@@ -50,9 +54,11 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
     cover: "/images/cover-solo.jpg",
     region: "BD",
+    map: "Bermuda",
   },
   {
     id: "t2",
+    slug: "night-squad-championship",
     title: "Night Squad Championship",
     titleBn: "নাইট স্কোয়াড চ্যাম্পিয়নশিপ",
     mode: "Squad",
@@ -64,9 +70,11 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 5).toISOString(),
     cover: "/images/cover-squad.jpg",
     region: "BD",
+    map: "Bermuda",
   },
   {
     id: "t3",
+    slug: "duo-rush-friday",
     title: "Duo Rush Friday",
     titleBn: "ডুও রাশ ফ্রাইডে",
     mode: "Duo",
@@ -78,9 +86,11 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 28).toISOString(),
     cover: "/images/cover-duo.jpg",
     region: "BD",
+    map: "Purgatory",
   },
   {
     id: "t4",
+    slug: "free-entry-squad-clash",
     title: "Free Entry Squad Clash",
     titleBn: "ফ্রি এন্ট্রি স্কোয়াড ক্ল্যাশ",
     mode: "Squad",
@@ -92,9 +102,11 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 50).toISOString(),
     cover: "/images/cover-free.jpg",
     region: "BD",
+    map: "Kalahari",
   },
   {
     id: "t5",
+    slug: "pro-solo-showdown",
     title: "Pro Solo Showdown",
     titleBn: "প্রো সোলো শোডাউন",
     mode: "Solo",
@@ -106,9 +118,11 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     cover: "/images/cover-pro.jpg",
     region: "BD",
+    map: "Alpine",
   },
   {
     id: "t6",
+    slug: "weekend-grand-squad",
     title: "Weekend Grand Squad",
     titleBn: "উইকেন্ড গ্র্যান্ড স্কোয়াড",
     mode: "Squad",
@@ -120,6 +134,7 @@ export const tournaments: Tournament[] = [
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
     cover: "/images/cover-grand.jpg",
     region: "BD",
+    map: "Bermuda",
   },
 ];
 

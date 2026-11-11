@@ -5,14 +5,14 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "FFBD Tournaments | Bangladesh's Biggest Free Fire Tournaments",
+  title: `${BRAND.name} | Bangladesh Free Fire Tournaments`,
   description:
-    "Join Bangladesh's biggest Free Fire tournaments. Free & paid cups, instant room ID, bKash/Nagad payouts. Register now and win real prizes.",
+    "BANGLAR TOURNAMENTS — Bangladesh's Free Fire cups. Free & paid entry, room ID, bKash/Nagad payouts. Play fair, win big.",
   keywords: [
     "Free Fire",
     "Bangladesh",
     "Tournament",
-    "FFBD",
+    "BANGLAR TOURNAMENTS",
     "Esports",
     "bKash",
     "Nagad",
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     shortcut: BRAND.logo,
   },
   openGraph: {
-    title: "FFBD Tournaments",
-    description: "Bangladesh's Biggest Free Fire Tournaments",
+    title: BRAND.name,
+    description: "Bangladesh Free Fire Tournaments — free & paid cups",
     images: [{ url: BRAND.cover }],
   },
 };

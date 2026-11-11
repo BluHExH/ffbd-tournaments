@@ -9,10 +9,26 @@ export default function Footer() {
   const { t } = useLanguage();
 
   const socials = [
-    { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-    { icon: MessageCircle, href: "https://wa.me", label: "WhatsApp" },
-    { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
-    { icon: Send, href: "https://t.me", label: "Telegram" },
+    {
+      icon: Facebook,
+      href: BRAND.social.facebook,
+      label: "Facebook",
+    },
+    {
+      icon: Send,
+      href: BRAND.social.telegram,
+      label: "Telegram",
+    },
+    {
+      icon: MessageCircle,
+      href: BRAND.social.telegram,
+      label: "WhatsApp",
+    },
+    {
+      icon: Youtube,
+      href: BRAND.social.facebook,
+      label: "YouTube",
+    },
   ];
 
   return (
@@ -24,11 +40,12 @@ export default function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={BRAND.logo}
-                alt="FFBD Logo"
+                alt={BRAND.name}
                 className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10"
               />
-              <span className="font-heading text-xl font-bold text-white">
-                FFBD<span className="text-[#FF5C00]">.</span>
+              <span className="font-heading text-lg font-bold text-white leading-tight">
+                BANGLAR
+                <span className="block text-[#FF5C00] text-sm tracking-wide">TOURNAMENTS</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed text-white/60 max-w-xs">
@@ -70,13 +87,23 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <a href="mailto:support@ffbd.gg" className="hover:text-[#FF5C00] transition-colors">
-                  support@ffbd.gg
+                <a
+                  href={BRAND.social.telegram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#FF5C00] transition-colors"
+                >
+                  Telegram Support
                 </a>
               </li>
               <li>
-                <a href="https://wa.me/8801XXXXXXXXX" className="hover:text-[#FF5C00] transition-colors">
-                  WhatsApp Support
+                <a
+                  href={BRAND.social.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#FF5C00] transition-colors"
+                >
+                  Facebook Page
                 </a>
               </li>
             </ul>
@@ -104,7 +131,9 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/40">
-          <p>© {new Date().getFullYear()} FFBD Tournaments. {t("footer.rights")}</p>
+          <p>
+            © {new Date().getFullYear()} {BRAND.name}. {t("footer.rights")}
+          </p>
           <p>Made for Bangladeshi Free Fire community</p>
         </div>
       </div>

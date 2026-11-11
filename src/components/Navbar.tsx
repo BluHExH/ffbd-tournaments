@@ -38,15 +38,15 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={BRAND.logo}
-            alt="FFBD Logo"
-            className="w-10 h-10 rounded-xl object-cover shadow-md ring-1 ring-white/10"
+            alt={BRAND.name}
+            className="w-10 h-10 rounded-xl object-cover shadow-md ring-1 ring-white/10 shrink-0"
           />
-          <span className="font-heading text-xl font-bold text-white tracking-tight">
-            FFBD<span className="text-[#FF5C00]">.</span>
+          <span className="font-heading text-base sm:text-lg font-bold text-white tracking-tight truncate">
+            BANGLAR<span className="text-[#FF5C00]"> TOURNAMENTS</span>
           </span>
         </Link>
 

@@ -10,6 +10,8 @@ export type SortOption = "starting-soon" | "biggest-prize" | "lowest-entry";
 
 export interface Tournament {
   id: string;
+  /** Public serial UID e.g. #FF001 */
+  uid: string;
   slug: string;
   title: string;
   titleBn: string;

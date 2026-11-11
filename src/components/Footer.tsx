@@ -3,30 +3,40 @@
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { BRAND } from "@/lib/brand";
+import {
+  FacebookIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+  YouTubeIcon,
+} from "@/components/SocialIcons";
 
 export default function Footer() {
   const { t } = useLanguage();
 
   const socials = [
     {
+      icon: FacebookIcon,
+      href: BRAND.social.facebook,
       label: "Facebook",
-      href: BRAND.social.facebook,
-      icon: BRAND.icons.facebook,
+      color: "hover:text-[#1877F2] hover:border-[#1877F2]/50 hover:bg-[#1877F2]/10",
     },
     {
+      icon: TelegramIcon,
+      href: BRAND.social.telegram,
       label: "Telegram",
-      href: BRAND.social.telegram,
-      icon: BRAND.icons.telegram,
+      color: "hover:text-[#26A5E4] hover:border-[#26A5E4]/50 hover:bg-[#26A5E4]/10",
     },
     {
+      icon: WhatsAppIcon,
+      href: BRAND.social.telegram,
       label: "WhatsApp",
-      href: BRAND.social.telegram,
-      icon: BRAND.icons.whatsapp,
+      color: "hover:text-[#25D366] hover:border-[#25D366]/50 hover:bg-[#25D366]/10",
     },
     {
-      label: "YouTube",
+      icon: YouTubeIcon,
       href: BRAND.social.facebook,
-      icon: BRAND.icons.youtube,
+      label: "YouTube",
+      color: "hover:text-[#FF0000] hover:border-[#FF0000]/50 hover:bg-[#FF0000]/10",
     },
   ];
 
@@ -60,10 +70,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link
-                  href="/tournaments"
-                  className="hover:text-[#FF5C00] transition-colors"
-                >
+                <Link href="/tournaments" className="hover:text-[#FF5C00] transition-colors">
                   {t("nav.tournaments")}
                 </Link>
               </li>
@@ -126,14 +133,9 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   aria-label={s.label}
                   title={s.label}
-                  className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-110 hover:border-white/25 transition-all"
+                  className={`w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/80 transition-all ${s.color}`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={s.icon}
-                    alt={s.label}
-                    className="w-7 h-7 object-contain"
-                  />
+                  <s.icon className="w-5 h-5" />
                 </a>
               ))}
             </div>

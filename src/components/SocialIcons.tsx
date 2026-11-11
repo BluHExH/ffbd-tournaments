@@ -1,4 +1,4 @@
-/** Official-style brand icons (SVG paths) */
+/** Official-style brand icons (SVG) */
 
 export function FacebookIcon({ className }: { className?: string }) {
   return (

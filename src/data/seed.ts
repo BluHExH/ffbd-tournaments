@@ -6,6 +6,7 @@ export type MapName = "Bermuda" | "Purgatory" | "Kalahari" | "Alpine";
 
 export interface Tournament {
   id: string;
+  uid: string;
   slug: string;
   title: string;
   titleBn: string;
@@ -41,66 +42,83 @@ export interface Winner {
   method: "bKash" | "Nagad";
 }
 
+/** Serial UID: #FF001, #FF002, ... */
+export function makeUid(n: number) {
+  return `#FF${String(n).padStart(3, "0")}`;
+}
+
 const C = BRAND.cover;
 
 export const tournaments: Tournament[] = [
   {
-    id: "t1", slug: "ffbd-weekly-solo-cup", title: "FFBD Weekly Solo Cup", titleBn: "এফএফবিডি উইকলি সোলো কাপ",
+    id: "t1", uid: makeUid(1), slug: "ffbd-weekly-solo-cup",
+    title: "FFBD Weekly Solo Cup", titleBn: "এফএফবিডি উইকলি সোলো কাপ",
     mode: "Solo", entryFee: 0, prizePool: 15000, slots: 48, slotsFilled: 41, status: "live",
     startAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(), cover: C, region: "BD", map: "Bermuda",
   },
   {
-    id: "t2", slug: "night-squad-championship", title: "Night Squad Championship", titleBn: "নাইট স্কোয়াড চ্যাম্পিয়নশিপ",
+    id: "t2", uid: makeUid(2), slug: "night-squad-championship",
+    title: "Night Squad Championship", titleBn: "নাইট স্কোয়াড চ্যাম্পিয়নশিপ",
     mode: "Squad", entryFee: 100, prizePool: 50000, slots: 24, slotsFilled: 18, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 5).toISOString(), cover: C, region: "BD", map: "Bermuda",
   },
   {
-    id: "t3", slug: "duo-rush-friday", title: "Duo Rush Friday", titleBn: "ডুও রাশ ফ্রাইডে",
+    id: "t3", uid: makeUid(3), slug: "duo-rush-friday",
+    title: "Duo Rush Friday", titleBn: "ডুও রাশ ফ্রাইডে",
     mode: "Duo", entryFee: 50, prizePool: 25000, slots: 36, slotsFilled: 29, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 28).toISOString(), cover: C, region: "BD", map: "Purgatory",
   },
   {
-    id: "t4", slug: "free-entry-squad-clash", title: "Free Entry Squad Clash", titleBn: "ফ্রি এন্ট্রি স্কোয়াড ক্ল্যাশ",
+    id: "t4", uid: makeUid(4), slug: "free-entry-squad-clash",
+    title: "Free Entry Squad Clash", titleBn: "ফ্রি এন্ট্রি স্কোয়াড ক্ল্যাশ",
     mode: "Squad", entryFee: 0, prizePool: 20000, slots: 20, slotsFilled: 12, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 50).toISOString(), cover: C, region: "BD", map: "Kalahari",
   },
   {
-    id: "t5", slug: "pro-solo-showdown", title: "Pro Solo Showdown", titleBn: "প্রো সোলো শোডাউন",
+    id: "t5", uid: makeUid(5), slug: "pro-solo-showdown",
+    title: "Pro Solo Showdown", titleBn: "প্রো সোলো শোডাউন",
     mode: "Solo", entryFee: 80, prizePool: 35000, slots: 48, slotsFilled: 48, status: "ended",
     startAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), cover: C, region: "BD", map: "Alpine",
   },
   {
-    id: "t6", slug: "weekend-grand-squad", title: "Weekend Grand Squad", titleBn: "উইকেন্ড গ্র্যান্ড স্কোয়াড",
+    id: "t6", uid: makeUid(6), slug: "weekend-grand-squad",
+    title: "Weekend Grand Squad", titleBn: "উইকেন্ড গ্র্যান্ড স্কোয়াড",
     mode: "Squad", entryFee: 150, prizePool: 100000, slots: 16, slotsFilled: 9, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(), cover: C, region: "BD", map: "Bermuda",
   },
   {
-    id: "t7", slug: "midnight-solo-blitz", title: "Midnight Solo Blitz", titleBn: "মিডনাইট সোলো ব্লিটজ",
+    id: "t7", uid: makeUid(7), slug: "midnight-solo-blitz",
+    title: "Midnight Solo Blitz", titleBn: "মিডনাইট সোলো ব্লিটজ",
     mode: "Solo", entryFee: 30, prizePool: 12000, slots: 48, slotsFilled: 22, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(), cover: C, region: "BD", map: "Purgatory",
   },
   {
-    id: "t8", slug: "dhaka-duo-open", title: "Dhaka Duo Open", titleBn: "ঢাকা ডুও ওপেন",
+    id: "t8", uid: makeUid(8), slug: "dhaka-duo-open",
+    title: "Dhaka Duo Open", titleBn: "ঢাকা ডুও ওপেন",
     mode: "Duo", entryFee: 0, prizePool: 18000, slots: 40, slotsFilled: 31, status: "live",
     startAt: new Date(Date.now() + 1000 * 60 * 90).toISOString(), cover: C, region: "BD", map: "Bermuda",
   },
   {
-    id: "t9", slug: "kalahari-squad-wars", title: "Kalahari Squad Wars", titleBn: "কালাহারি স্কোয়াড ওয়ার্স",
+    id: "t9", uid: makeUid(9), slug: "kalahari-squad-wars",
+    title: "Kalahari Squad Wars", titleBn: "কালাহারি স্কোয়াড ওয়ার্স",
     mode: "Squad", entryFee: 120, prizePool: 60000, slots: 20, slotsFilled: 20, status: "ended",
     startAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), cover: C, region: "BD", map: "Kalahari",
   },
   {
-    id: "t10", slug: "alpine-pro-duo", title: "Alpine Pro Duo", titleBn: "আলপাইন প্রো ডুও",
+    id: "t10", uid: makeUid(10), slug: "alpine-pro-duo",
+    title: "Alpine Pro Duo", titleBn: "আলপাইন প্রো ডুও",
     mode: "Duo", entryFee: 70, prizePool: 28000, slots: 32, slotsFilled: 14, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 36).toISOString(), cover: C, region: "BD", map: "Alpine",
   },
   {
-    id: "t11", slug: "free-solo-friday", title: "Free Solo Friday", titleBn: "ফ্রি সোলো ফ্রাইডে",
+    id: "t11", uid: makeUid(11), slug: "free-solo-friday",
+    title: "Free Solo Friday", titleBn: "ফ্রি সোলো ফ্রাইডে",
     mode: "Solo", entryFee: 0, prizePool: 10000, slots: 48, slotsFilled: 8, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 96).toISOString(), cover: C, region: "BD", map: "Bermuda",
   },
   {
-    id: "t12", slug: "champions-squad-final", title: "Champions Squad Final", titleBn: "চ্যাম্পিয়নস স্কোয়াড ফাইনাল",
+    id: "t12", uid: makeUid(12), slug: "champions-squad-final",
+    title: "Champions Squad Final", titleBn: "চ্যাম্পিয়নস স্কোয়াড ফাইনাল",
     mode: "Squad", entryFee: 200, prizePool: 150000, slots: 12, slotsFilled: 6, status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 120).toISOString(), cover: C, region: "BD", map: "Purgatory",
   },
@@ -127,9 +145,7 @@ export const winners: Winner[] = [
   { id: "w7", name: "Fahim Hasan", amount: 4000, tournament: "Midnight Solo Blitz", date: "2026-11-01", method: "Nagad" },
 ];
 
-export const sponsors = [
-  "bKash", "Nagad", "Garena", "Redmi", "Robi", "Daraz",
-];
+export const sponsors = ["bKash", "Nagad", "Garena", "Redmi", "Robi", "Daraz"];
 
 export const stats = {
   prizePoolPaid: 2450000,

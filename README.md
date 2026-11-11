@@ -2,6 +2,15 @@
 
 Bangladesh's Biggest Free Fire Tournaments platform.
 
+## 🌐 Live Website
+
+**https://ffbd-tournaments.vercel.app**
+
+| Page | URL |
+|------|-----|
+| Home | https://ffbd-tournaments.vercel.app |
+| Tournaments | https://ffbd-tournaments.vercel.app/tournaments |
+
 ## Phase 1 + Phase 2
 
 ### Design Tokens
@@ -21,7 +30,7 @@ Bangladesh's Biggest Free Fire Tournaments platform.
 ### Stack
 Next.js 15 App Router · Tailwind CSS 4 · TypeScript · Framer Motion · Lucide
 
-### Run
+### Run locally
 ```bash
 npm install
 npm run dev
@@ -30,4 +39,4 @@ npm run dev
 ### Structure
 - `src/types` — Tournament, MatchResult, PrizeRow, etc.
 - `src/services/tournamentService.ts` — getTournaments, getTournamentBySlug
-- `src/data/seed.ts` — 12 tournaments with full bilingual data
+- `src/data/seed.ts` — tournaments with bilingual data

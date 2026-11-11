@@ -12,31 +12,42 @@ import LiveBadge from "@/components/LiveBadge";
 import { useLanguage } from "@/context/LanguageContext";
 import { tournaments, teams, winners, stats } from "@/data/seed";
 import { formatBDT, formatNumber } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 
 export default function HomePage() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const liveUpcoming = tournaments.filter((x) => x.status !== "ended").slice(0, 5);
 
   return (
     <>
       <Navbar />
       <main>
+        {/* Hero */}
         <section id="home" className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(160deg,#0B1221_0%,#121C2E_40%,#0B1221_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,92,0,0.18),transparent_50%)]" />
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={BRAND.cover}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-[#0B1221]/75" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1221] via-[#0B1221]/50 to-[#0B1221]/30" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,92,0,0.22),transparent_55%)]" />
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-28 pb-20 w-full">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-white/80 mb-6">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/8 border border-white/15 text-sm text-white/85 mb-7 backdrop-blur-md">
                 <LiveBadge />
-                <span className="hidden sm:inline">Next match soon</span>
+                <span className="hidden sm:inline font-medium">Next match soon</span>
               </div>
-              <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
+              <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] font-bold text-white leading-[1.08] tracking-tight drop-shadow-lg">
                 {t("hero.headline")}
               </h1>
-              <p className="mt-5 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
+              <p className="mt-5 text-base sm:text-lg text-white/75 max-w-xl mx-auto leading-relaxed">
                 {t("hero.sub")}
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/tournaments" className="btn btn-primary w-full sm:w-auto min-w-[180px]">
                   {t("hero.cta1")}
                 </Link>
@@ -45,15 +56,15 @@ export default function HomePage() {
                 </Link>
               </div>
               <div className="mt-12 flex flex-wrap justify-center gap-3">
-                <div className="stat-chip text-white flex items-center gap-2">
+                <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
                   <span className="text-[#FF5C00] font-bold">{formatBDT(stats.prizePoolPaid)}</span>
                   <span className="text-white/60 text-xs">{t("hero.stat1")}</span>
                 </div>
-                <div className="stat-chip text-white flex items-center gap-2">
+                <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
                   <span className="text-emerald-400 font-bold">{formatNumber(stats.teamsRegistered)}+</span>
                   <span className="text-white/60 text-xs">{t("hero.stat2")}</span>
                 </div>
-                <div className="stat-chip text-white flex items-center gap-2">
+                <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
                   <span className="text-sky-400 font-bold">{stats.tournamentsHeld}+</span>
                   <span className="text-white/60 text-xs">{t("hero.stat3")}</span>
                 </div>
@@ -62,48 +73,62 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="live" className="section-dark py-16 md:py-24">
+        {/* Live strip */}
+        <section id="live" className="section-dark py-16 md:py-20 border-t border-white/5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-end justify-between mb-8">
+            <div className="flex items-end justify-between mb-8 gap-4">
               <SectionHeading title={t("live.title")} light align="left" className="mb-0" />
-              <Link href="/tournaments" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-[#FF5C00] hover:underline">
+              <Link
+                href="/tournaments"
+                className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-[#FF5C00] hover:text-[#FF7A33] transition-colors shrink-0"
+              >
                 {t("live.viewAll")}
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+            <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar snap-x snap-mandatory">
               {liveUpcoming.map((tour) => (
-                <TournamentCard key={tour.id} tournament={tour as any} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="section-light py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={t("how.title")} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { icon: UserPlus, title: t("how.step1"), desc: t("how.step1.desc") },
-                { icon: CreditCard, title: t("how.step2"), desc: t("how.step2.desc") },
-                { icon: KeyRound, title: t("how.step3"), desc: t("how.step3.desc") },
-                { icon: Trophy, title: t("how.step4"), desc: t("how.step4.desc") },
-              ].map((step, i) => (
-                <div key={i} className="card-light p-6 flex flex-col items-start gap-4 relative">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5C00]/15 to-[#FF8A00]/10 flex items-center justify-center text-[#FF5C00]">
-                    <step.icon className="w-6 h-6" />
-                  </div>
-                  <div className="absolute top-5 right-5 font-heading text-4xl font-bold text-slate-100">{i + 1}</div>
-                  <h3 className="font-heading text-lg font-bold text-[#0F172A]">{step.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
+                <div key={tour.id} className="snap-start">
+                  <TournamentCard tournament={tour as any} />
                 </div>
               ))}
             </div>
           </div>
         </section>
 
+        {/* How it works */}
+        <section id="how" className="section-light py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <SectionHeading title={t("how.title")} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+              {[
+                { icon: UserPlus, title: t("how.step1"), desc: t("how.step1.desc") },
+                { icon: CreditCard, title: t("how.step2"), desc: t("how.step2.desc") },
+                { icon: KeyRound, title: t("how.step3"), desc: t("how.step3.desc") },
+                { icon: Trophy, title: t("how.step4"), desc: t("how.step4.desc") },
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  className="card-light p-6 flex flex-col items-start gap-4 relative hover:-translate-y-1 transition-transform duration-300"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5C00]/15 to-[#FF8A00]/10 flex items-center justify-center text-[#FF5C00]">
+                    <step.icon className="w-6 h-6" />
+                  </div>
+                  <div className="absolute top-4 right-5 font-heading text-5xl font-bold text-slate-100/90 select-none">
+                    {i + 1}
+                  </div>
+                  <h3 className="font-heading text-lg font-bold text-[#0F172A] relative z-10">{step.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed relative z-10">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Stats */}
         <section className="relative py-20 md:py-28 overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(160deg,#0B1221_0%,#121C2E_50%,#0B1221_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.12),transparent_60%)]" />
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
             <SectionHeading title={t("stats.title")} light />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-16">
@@ -114,10 +139,11 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Teams */}
         <section id="winners" className="section-white py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <SectionHeading title={t("teams.title")} />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
               {teams.slice(0, 8).map((team) => (
                 <TeamCard key={team.id} team={team} />
               ))}
@@ -125,13 +151,17 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Payouts */}
         <section className="section-light py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <SectionHeading title={t("payout.title")} />
-            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
               {[...winners, ...winners].map((w, i) => (
-                <div key={`${w.id}-${i}`} className="card-light shrink-0 min-w-[240px] p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                <div
+                  key={`${w.id}-${i}`}
+                  className="card-light shrink-0 min-w-[240px] p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {w.name.charAt(0)}
                   </div>
                   <div className="min-w-0">
@@ -148,22 +178,32 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="faq" className="section-light py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-            <SectionHeading title={t("faq.title")} />
-            <p className="text-slate-500 mb-8">Coming soon — full FAQ on site.</p>
+        {/* FAQ CTA */}
+        <section id="faq" className="section-white py-16 md:py-20">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
+            <SectionHeading title={t("faq.title")} className="mb-4" />
+            <p className="text-slate-500 mb-8 text-sm sm:text-base">
+              Free entry, paid cups, bKash / Nagad payouts — সব এক জায়গায়।
+            </p>
             <Link href="/tournaments" className="btn btn-primary-light">
               {t("cta.button")}
             </Link>
           </div>
         </section>
 
+        {/* Bottom CTA */}
         <section id="register" className="relative py-16 md:py-20 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-[#FF5C00] to-[#FF8A00]" />
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_50%,white,transparent_50%)]" />
           <div className="relative z-10 max-w-3xl mx-auto px-4 text-center">
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-white">{t("cta.title")}</h2>
-            <p className="mt-4 text-white/85 text-base sm:text-lg">{t("cta.sub")}</p>
-            <Link href="/tournaments" className="btn mt-8 bg-white text-[#FF5C00] hover:bg-white/95 shadow-lg min-w-[200px] inline-flex">
+            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+              {t("cta.title")}
+            </h2>
+            <p className="mt-4 text-white/90 text-base sm:text-lg">{t("cta.sub")}</p>
+            <Link
+              href="/tournaments"
+              className="btn mt-8 bg-white text-[#FF5C00] hover:bg-white/95 shadow-xl min-w-[200px] inline-flex font-bold"
+            >
               {t("cta.button")}
             </Link>
           </div>

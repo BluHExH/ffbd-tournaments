@@ -1,9 +1,14 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
 import { TournamentForm } from "../../TournamentForm";
-import { mapRowToTournament, type TournamentRow } from "@/types/tournament";
+import {
+  mapRowToTournament,
+  type TournamentRow,
+  type RoomCredentialsRow,
+} from "@/types/tournament";
+import { requireAdmin } from "@/lib/admin/auth";
 
 export default async function EditTournamentPage({
   params,
@@ -11,19 +16,8 @@ export default async function EditTournamentPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireAdmin();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!admin) redirect("/admin/login");
 
   const { data: row, error } = await supabase
     .from("tournaments")
@@ -33,7 +27,16 @@ export default async function EditTournamentPage({
 
   if (error || !row) notFound();
 
-  const t = mapRowToTournament(row as TournamentRow);
+  const { data: creds } = await supabase
+    .from("tournament_room_credentials")
+    .select("*")
+    .eq("tournament_id", id)
+    .maybeSingle();
+
+  const t = mapRowToTournament(
+    row as TournamentRow,
+    (creds as RoomCredentialsRow) || null
+  );
 
   return (
     <div className="min-h-screen">

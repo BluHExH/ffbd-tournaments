@@ -1,25 +1,13 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
 import { TournamentForm } from "../TournamentForm";
+import { requireAdmin } from "@/lib/admin/auth";
 
 export default async function NewTournamentPage() {
+  await requireAdmin();
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!admin) redirect("/admin/login");
-
-  // Suggest next UID
   const { data: last } = await supabase
     .from("tournaments")
     .select("uid")

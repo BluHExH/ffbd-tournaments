@@ -1,24 +1,13 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Plus, ArrowLeft, Pencil } from "lucide-react";
 import { formatBDT } from "@/lib/utils";
 import { DeleteTournamentButton } from "./DeleteTournamentButton";
+import { requireAdmin } from "@/lib/admin/auth";
 
 export default async function AdminTournamentsPage() {
+  await requireAdmin();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!admin) redirect("/admin/login");
 
   const { data: tournaments } = await supabase
     .from("tournaments")
@@ -76,7 +65,7 @@ export default async function AdminTournamentsPage() {
               {tournaments.map((t) => (
                 <div
                   key={t.id}
-                  className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-2 px-4 py-3.5 items-center hover:bg-white/[0.02] transition"
+                  className="grid grid-cols-1 md:grid-cols-12 gap-2 px-4 py-3.5 items-center hover:bg-white/[0.02] transition"
                 >
                   <div className="md:col-span-1">
                     <span className="text-xs font-mono text-white/40">{t.uid}</span>
@@ -87,9 +76,7 @@ export default async function AdminTournamentsPage() {
                       {t.mode} - {t.status}
                     </p>
                   </div>
-                  <div className="hidden md:block md:col-span-1 text-xs text-white/50">
-                    {t.mode}
-                  </div>
+                  <div className="hidden md:block md:col-span-1 text-xs text-white/50">{t.mode}</div>
                   <div className="hidden md:block md:col-span-1">
                     <StatusBadge status={t.status} />
                   </div>

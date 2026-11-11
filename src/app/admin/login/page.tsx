@@ -52,14 +52,15 @@ export default function AdminLoginPage() {
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const totpFactor = factorsData?.totp?.[0];
 
-      if (totpFactor) {
-        setFactorId(totpFactor.id);
-        setStep("mfa");
-        setLoading(false);
-      } else {
-        router.push("/admin");
+      if (!totpFactor) {
+        router.push("/admin/mfa");
         router.refresh();
+        return;
       }
+
+      setFactorId(totpFactor.id);
+      setStep("mfa");
+      setLoading(false);
     } catch {
       setError("Something went wrong. Try again.");
       setLoading(false);
@@ -238,7 +239,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-white/30">
-          Authorized admins only - Max 3 accounts
+          Authorized admins only · MFA required · Max 3 accounts
         </p>
       </div>
     </div>

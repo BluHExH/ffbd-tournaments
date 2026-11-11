@@ -19,20 +19,51 @@ export default function MfaEnrollPage() {
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/admin/login");
+
+      if (userError || !user) {
+        router.replace("/admin/login");
         return;
       }
 
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      if (factors?.totp && factors.totp.length > 0) {
-        setDone(true);
-        setLoading(false);
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel === "aal2") {
+        router.replace("/admin");
         return;
+      }
+
+      const { data: factors, error: factorsError } =
+        await supabase.auth.mfa.listFactors();
+
+      if (factorsError) {
+        if (!cancelled) {
+          setError(factorsError.message);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const verified = (factors?.totp ?? []).filter(
+        (f) => f.status === "verified"
+      );
+
+      if (verified.length > 0) {
+        router.replace("/admin/login?step=mfa");
+        return;
+      }
+
+      const unverified = (factors?.totp ?? []).filter(
+        (f) => f.status !== "verified"
+      );
+      for (const f of unverified) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
 
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
@@ -41,23 +72,41 @@ export default function MfaEnrollPage() {
       });
 
       if (enrollError) {
-        setError(enrollError.message);
-        setLoading(false);
+        if (!cancelled) {
+          setError(enrollError.message);
+          setLoading(false);
+        }
         return;
       }
 
-      setFactorId(data.id);
-      setQr(data.totp.qr_code);
-      setSecret(data.totp.secret);
-      setLoading(false);
+      if (!data?.totp) {
+        if (!cancelled) {
+          setError("Enrollment response missing TOTP data.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setFactorId(data.id);
+        setQr(data.totp.qr_code);
+        setSecret(data.totp.secret);
+        setLoading(false);
+      }
     }
 
     init();
+    return () => {
+      cancelled = true;
+    };
   }, [router, supabase.auth]);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (!factorId) return;
+    if (!factorId) {
+      setError("No enrollment in progress. Refresh the page.");
+      return;
+    }
 
     setVerifying(true);
     setError(null);
@@ -71,6 +120,12 @@ export default function MfaEnrollPage() {
       return;
     }
 
+    if (!challenge?.id) {
+      setError("Could not start verification challenge.");
+      setVerifying(false);
+      return;
+    }
+
     const { error: verifyError } = await supabase.auth.mfa.verify({
       factorId,
       challengeId: challenge.id,
@@ -79,6 +134,18 @@ export default function MfaEnrollPage() {
 
     if (verifyError) {
       setError("Invalid code. Make sure the time on your phone is correct.");
+      setVerifying(false);
+      return;
+    }
+
+    const { data: aal, error: aalError } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (aalError || aal?.currentLevel !== "aal2") {
+      setError(
+        aalError?.message ||
+          "Code accepted but session is not fully elevated. Try signing in again."
+      );
       setVerifying(false);
       return;
     }
@@ -104,7 +171,8 @@ export default function MfaEnrollPage() {
             Authenticator Connected
           </h1>
           <p className="text-sm text-white/50 mb-6">
-            Your account is now protected with 2FA. You will need the app code on every login.
+            Your account is now protected with 2FA. You will need the app code on
+            every login.
           </p>
           <button
             onClick={() => router.push("/admin")}
@@ -153,6 +221,12 @@ export default function MfaEnrollPage() {
             </div>
           )}
 
+          {error && (
+            <p className="text-sm text-red-400 text-center bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
           <form onSubmit={handleVerify} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-white/50 mb-1.5 text-center">
@@ -170,12 +244,6 @@ export default function MfaEnrollPage() {
                 autoFocus
               />
             </div>
-
-            {error && (
-              <p className="text-sm text-red-400 text-center bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
 
             <button
               type="submit"

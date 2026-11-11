@@ -7,12 +7,32 @@ export type AdminSession = {
 };
 
 /**
- * Server-side admin gate.
- * - Requires authenticated user
- * - Requires row in public.admins
- * - Requires MFA AAL2 (TOTP verified)
+ * Authentication states for admin access:
+ * 1. unauthenticated
+ * 2. password_authenticated (AAL1, may need enroll or verify)
+ * 3. mfa_enrollment_required
+ * 4. mfa_verification_required
+ * 5. fully_authenticated_aal2
  */
-export async function requireAdmin(): Promise<AdminSession> {
+export type AdminAuthState =
+  | { state: "unauthenticated" }
+  | { state: "not_admin" }
+  | { state: "mfa_enrollment_required"; userId: string; email?: string }
+  | { state: "mfa_verification_required"; userId: string; email?: string }
+  | { state: "fully_authenticated_aal2"; userId: string; email?: string };
+
+/** Only verified TOTP factors count as enrolled. */
+export function getVerifiedTotpFactors(
+  factors: { totp?: Array<{ id: string; status: string }> | null } | null | undefined
+): Array<{ id: string; status: string }> {
+  return (factors?.totp ?? []).filter((f) => f.status === "verified");
+}
+
+/**
+ * Resolve admin auth state without redirecting.
+ * Safe for middleware, pages, and tests.
+ */
+export async function resolveAdminAuthState(): Promise<AdminAuthState> {
   const supabase = await createClient();
 
   const {
@@ -21,7 +41,7 @@ export async function requireAdmin(): Promise<AdminSession> {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    redirect("/admin/login");
+    return { state: "unauthenticated" };
   }
 
   const { data: admin, error: adminError } = await supabase
@@ -31,55 +51,85 @@ export async function requireAdmin(): Promise<AdminSession> {
     .maybeSingle();
 
   if (adminError || !admin) {
-    await supabase.auth.signOut();
-    redirect("/admin/login");
+    return { state: "not_admin" };
   }
+
+  const email = admin.email ?? user.email ?? undefined;
 
   const { data: aal, error: aalError } =
     await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
-  if (aalError) {
+  if (aalError || !aal) {
+    return { state: "mfa_verification_required", userId: user.id, email };
+  }
+
+  if (aal.currentLevel === "aal2") {
+    return {
+      state: "fully_authenticated_aal2",
+      userId: user.id,
+      email,
+    };
+  }
+
+  const { data: factors, error: factorsError } =
+    await supabase.auth.mfa.listFactors();
+
+  if (factorsError) {
+    return { state: "mfa_enrollment_required", userId: user.id, email };
+  }
+
+  const verified = getVerifiedTotpFactors(factors);
+
+  if (verified.length === 0) {
+    return { state: "mfa_enrollment_required", userId: user.id, email };
+  }
+
+  return { state: "mfa_verification_required", userId: user.id, email };
+}
+
+/**
+ * Server-side admin gate for protected pages.
+ * Only fully_authenticated_aal2 proceeds; everything else redirects.
+ *
+ * Redirect map (no loops):
+ * - unauthenticated / not_admin → /admin/login (not_admin signs out)
+ * - mfa_enrollment_required → /admin/mfa
+ * - mfa_verification_required → /admin/login?step=mfa
+ * - fully_authenticated_aal2 → continue
+ */
+export async function requireAdmin(): Promise<AdminSession> {
+  const resolved = await resolveAdminAuthState();
+
+  if (resolved.state === "unauthenticated") {
     redirect("/admin/login");
   }
 
-  if (aal.currentLevel === "aal1" && aal.nextLevel === "aal2") {
-    const { data: factors } = await supabase.auth.mfa.listFactors();
-    const hasTotp = (factors?.totp?.length ?? 0) > 0;
-    if (!hasTotp) {
-      redirect("/admin/mfa");
-    }
+  if (resolved.state === "not_admin") {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
     redirect("/admin/login");
   }
 
-  if (aal.currentLevel !== "aal2") {
+  if (resolved.state === "mfa_enrollment_required") {
     redirect("/admin/mfa");
   }
 
+  if (resolved.state === "mfa_verification_required") {
+    redirect("/admin/login?step=mfa");
+  }
+
   return {
-    userId: user.id,
-    email: admin.email ?? user.email,
+    userId: resolved.userId,
+    email: resolved.email,
   };
 }
 
+/** Soft check — null if not fully authenticated AAL2 admin. */
 export async function getAdminSession(): Promise<AdminSession | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id, email")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!admin) return null;
-
-  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (!aal || aal.currentLevel !== "aal2") return null;
-
+  const resolved = await resolveAdminAuthState();
+  if (resolved.state !== "fully_authenticated_aal2") return null;
   return {
-    userId: user.id,
-    email: admin.email ?? user.email,
+    userId: resolved.userId,
+    email: resolved.email,
   };
 }

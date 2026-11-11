@@ -1,29 +1,40 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Lightweight edge gate. Final authority is requireAdmin() on each page.
+ *
+ * Paths:
+ * - /admin/login  — password + MFA challenge (AAL1 allowed)
+ * - /admin/mfa    — TOTP enrollment (AAL1 allowed)
+ * - /admin/*      — AAL2 required
+ */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -34,38 +45,54 @@ export async function updateSession(request: NextRequest) {
   const isLoginPage = path === "/admin/login";
   const isMfaPage = path === "/admin/mfa";
 
-  if (isAdminRoute && !isLoginPage && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
-    return NextResponse.redirect(url);
+  if (!isAdminRoute) {
+    return supabaseResponse;
   }
 
-  if (isLoginPage && user) {
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    const { data: factors } = await supabase.auth.mfa.listFactors();
-    const hasTotp = (factors?.totp?.length ?? 0) > 0;
+  if (!user) {
+    if (isLoginPage) return supabaseResponse;
+    const dest = request.nextUrl.clone();
+    dest.pathname = "/admin/login";
+    dest.search = "";
+    return NextResponse.redirect(dest);
+  }
 
-    const url = request.nextUrl.clone();
-    if (!hasTotp) {
-      url.pathname = "/admin/mfa";
-    } else if (aal?.currentLevel === "aal2") {
-      url.pathname = "/admin";
-    } else {
-      return supabaseResponse;
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const verifiedTotp = (factors?.totp ?? []).filter((f) => f.status === "verified");
+  const hasVerifiedTotp = verifiedTotp.length > 0;
+  const isAal2 = aal?.currentLevel === "aal2";
+
+  if (isAal2) {
+    if (isLoginPage || isMfaPage) {
+      const dest = request.nextUrl.clone();
+      dest.pathname = "/admin";
+      dest.search = "";
+      return NextResponse.redirect(dest);
     }
-    return NextResponse.redirect(url);
+    return supabaseResponse;
   }
 
-  if (isAdminRoute && !isLoginPage && !isMfaPage && user) {
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.currentLevel !== "aal2") {
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const hasTotp = (factors?.totp?.length ?? 0) > 0;
-      const url = request.nextUrl.clone();
-      url.pathname = hasTotp ? "/admin/login" : "/admin/mfa";
-      return NextResponse.redirect(url);
+  if (!hasVerifiedTotp) {
+    if (isMfaPage) return supabaseResponse;
+    const dest = request.nextUrl.clone();
+    dest.pathname = "/admin/mfa";
+    dest.search = "";
+    return NextResponse.redirect(dest);
+  }
+
+  if (isLoginPage) {
+    if (request.nextUrl.searchParams.get("step") !== "mfa") {
+      const dest = request.nextUrl.clone();
+      dest.pathname = "/admin/login";
+      dest.searchParams.set("step", "mfa");
+      return NextResponse.redirect(dest);
     }
+    return supabaseResponse;
   }
 
-  return supabaseResponse;
+  const dest = request.nextUrl.clone();
+  dest.pathname = "/admin/login";
+  dest.searchParams.set("step", "mfa");
+  return NextResponse.redirect(dest);
 }

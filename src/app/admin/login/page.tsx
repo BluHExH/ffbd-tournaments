@@ -1,23 +1,94 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, Loader2, KeyRound } from "lucide-react";
 
 type Step = "password" | "mfa";
 
-export default function AdminLoginPage() {
+function AdminLoginInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [step, setStep] = useState<Step>("password");
+  const [step, setStep] = useState<Step>(
+    searchParams.get("step") === "mfa" ? "mfa" : "password"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          if (!cancelled) setBootstrapping(false);
+          return;
+        }
+
+        const { data: aal, error: aalError } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+        if (aalError) {
+          if (!cancelled) {
+            setError(aalError.message);
+            setBootstrapping(false);
+          }
+          return;
+        }
+
+        if (aal?.currentLevel === "aal2") {
+          router.replace("/admin");
+          return;
+        }
+
+        const { data: factors, error: factorsError } =
+          await supabase.auth.mfa.listFactors();
+
+        if (factorsError) {
+          if (!cancelled) {
+            setError(factorsError.message);
+            setBootstrapping(false);
+          }
+          return;
+        }
+
+        const verified = (factors?.totp ?? []).filter(
+          (f) => f.status === "verified"
+        );
+
+        if (verified.length === 0) {
+          router.replace("/admin/mfa");
+          return;
+        }
+
+        if (!cancelled) {
+          setFactorId(verified[0].id);
+          setStep("mfa");
+          setBootstrapping(false);
+        }
+      } catch {
+        if (!cancelled) setBootstrapping(false);
+      }
+    }
+
+    bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, supabase.auth]);
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -25,13 +96,20 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
 
       if (signInError) {
         setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data.user) {
+        setError("Sign-in failed. Try again.");
         setLoading(false);
         return;
       }
@@ -42,23 +120,40 @@ export default function AdminLoginPage() {
         .eq("id", data.user.id)
         .maybeSingle();
 
-      if (adminError || !adminRow) {
+      if (adminError) {
+        await supabase.auth.signOut();
+        setError(adminError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!adminRow) {
         await supabase.auth.signOut();
         setError("You are not authorized as an admin.");
         setLoading(false);
         return;
       }
 
-      const { data: factorsData } = await supabase.auth.mfa.listFactors();
-      const totpFactor = factorsData?.totp?.[0];
+      const { data: factorsData, error: factorsError } =
+        await supabase.auth.mfa.listFactors();
 
-      if (!totpFactor) {
+      if (factorsError) {
+        setError(factorsError.message);
+        setLoading(false);
+        return;
+      }
+
+      const verified = (factorsData?.totp ?? []).filter(
+        (f) => f.status === "verified"
+      );
+
+      if (verified.length === 0) {
         router.push("/admin/mfa");
         router.refresh();
         return;
       }
 
-      setFactorId(totpFactor.id);
+      setFactorId(verified[0].id);
       setStep("mfa");
       setLoading(false);
     } catch {
@@ -69,7 +164,10 @@ export default function AdminLoginPage() {
 
   async function handleMfaVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (!factorId) return;
+    if (!factorId) {
+      setError("No authenticator factor found. Sign in again.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -80,6 +178,12 @@ export default function AdminLoginPage() {
 
       if (challengeError) {
         setError(challengeError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!challenge?.id) {
+        setError("Could not start MFA challenge. Try again.");
         setLoading(false);
         return;
       }
@@ -96,12 +200,32 @@ export default function AdminLoginPage() {
         return;
       }
 
+      const { data: aal, error: aalError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+      if (aalError || aal?.currentLevel !== "aal2") {
+        setError(
+          aalError?.message ||
+            "MFA verified but session is not fully elevated. Try again."
+        );
+        setLoading(false);
+        return;
+      }
+
       router.push("/admin");
       router.refresh();
     } catch {
       setError("Verification failed. Try again.");
       setLoading(false);
     }
+  }
+
+  if (bootstrapping) {
+    return (
+      <div className="min-h-screen bg-[#0B1221] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#FF5C00]" />
+      </div>
+    );
   }
 
   return (
@@ -224,11 +348,13 @@ export default function AdminLoginPage() {
 
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   setStep("password");
                   setOtp("");
+                  setFactorId(null);
                   setError(null);
-                  supabase.auth.signOut();
+                  await supabase.auth.signOut();
+                  router.replace("/admin/login");
                 }}
                 className="w-full text-sm text-white/40 hover:text-white/70 transition"
               >
@@ -243,5 +369,19 @@ export default function AdminLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0B1221] flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-[#FF5C00]" />
+        </div>
+      }
+    >
+      <AdminLoginInner />
+    </Suspense>
   );
 }

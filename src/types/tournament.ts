@@ -27,6 +27,57 @@ export interface Tournament {
   map: MapName;
   description?: string;
   descriptionBn?: string;
+  roomId?: string | null;
+  roomPassword?: string | null;
+}
+
+/** Shape coming from Supabase (snake_case) */
+export interface TournamentRow {
+  id: string;
+  uid: string;
+  slug: string;
+  title: string;
+  title_bn: string;
+  mode: TournamentMode;
+  entry_fee: number;
+  prize_pool: number;
+  slots: number;
+  slots_filled: number;
+  status: TournamentStatus;
+  start_at: string;
+  cover: string | null;
+  region: string;
+  map: MapName;
+  description: string | null;
+  description_bn: string | null;
+  room_id: string | null;
+  room_password: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function mapRowToTournament(row: TournamentRow): Tournament {
+  return {
+    id: row.id,
+    uid: row.uid,
+    slug: row.slug,
+    title: row.title,
+    titleBn: row.title_bn,
+    mode: row.mode,
+    entryFee: row.entry_fee,
+    prizePool: row.prize_pool,
+    slots: row.slots,
+    slotsFilled: row.slots_filled,
+    status: row.status,
+    startAt: row.start_at,
+    cover: row.cover || "",
+    region: row.region,
+    map: row.map,
+    description: row.description || undefined,
+    descriptionBn: row.description_bn || undefined,
+    roomId: row.room_id,
+    roomPassword: row.room_password,
+  };
 }
 
 export interface Team {

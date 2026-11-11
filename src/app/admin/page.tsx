@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -11,26 +10,11 @@ import {
 } from "lucide-react";
 import { AdminLogoutButton } from "./AdminLogoutButton";
 import { formatBDT } from "@/lib/utils";
+import { requireAdmin } from "@/lib/admin/auth";
 
 export default async function AdminDashboardPage() {
+  const admin = await requireAdmin();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/admin/login");
-
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id, name, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!admin) {
-    await supabase.auth.signOut();
-    redirect("/admin/login");
-  }
 
   const { count: totalTournaments } = await supabase
     .from("tournaments")
@@ -83,12 +67,8 @@ export default async function AdminDashboardPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-sm text-white/45 mt-0.5">
-              Manage tournaments and settings
-            </p>
+            <h1 className="font-heading text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-sm text-white/45 mt-0.5">Manage tournaments and settings</p>
           </div>
           <Link
             href="/admin/tournaments/new"
@@ -182,11 +162,7 @@ function StatCard({
         {icon}
         <span className="text-xs">{label}</span>
       </div>
-      <p
-        className={`font-heading text-xl font-bold tracking-tight ${
-          accent === "live" ? "text-red-400" : "text-white"
-        }`}
-      >
+      <p className={`font-heading text-xl font-bold tracking-tight ${accent === "live" ? "text-red-400" : "text-white"}`}>
         {value}
       </p>
     </div>
@@ -200,11 +176,7 @@ function StatusBadge({ status }: { status: string }) {
     ended: "bg-white/5 text-white/40 border-white/10",
   };
   return (
-    <span
-      className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-        styles[status] || styles.ended
-      }`}
-    >
+    <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${styles[status] || styles.ended}`}>
       {status}
     </span>
   );

@@ -25,14 +25,14 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /admin routes (except /admin/login)
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isLoginPage = request.nextUrl.pathname === "/admin/login";
+  const path = request.nextUrl.pathname;
+  const isAdminRoute = path.startsWith("/admin");
+  const isLoginPage = path === "/admin/login";
+  const isMfaPage = path === "/admin/mfa";
 
   if (isAdminRoute && !isLoginPage && !user) {
     const url = request.nextUrl.clone();
@@ -40,11 +40,31 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If already logged in and visiting login page → go to admin dashboard
   if (isLoginPage && user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const hasTotp = (factors?.totp?.length ?? 0) > 0;
+
     const url = request.nextUrl.clone();
-    url.pathname = "/admin";
+    if (!hasTotp) {
+      url.pathname = "/admin/mfa";
+    } else if (aal?.currentLevel === "aal2") {
+      url.pathname = "/admin";
+    } else {
+      return supabaseResponse;
+    }
     return NextResponse.redirect(url);
+  }
+
+  if (isAdminRoute && !isLoginPage && !isMfaPage && user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.currentLevel !== "aal2") {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const hasTotp = (factors?.totp?.length ?? 0) > 0;
+      const url = request.nextUrl.clone();
+      url.pathname = hasTotp ? "/admin/login" : "/admin/mfa";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

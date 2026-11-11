@@ -1,63 +1,46 @@
-# Admin Panel Setup Guide
+# Admin Panel Setup Guide (Secure v2)
 
-## Step 1 — Create Supabase Project
+## Prerequisites
 
-1. Go to [https://supabase.com](https://supabase.com) → Sign up / Login
-2. Click **New Project**
-3. Name: `ffbd-tournaments` (or anything)
-4. Set a strong Database Password (save it)
-5. Region: choose closest (Singapore recommended for BD)
-6. Wait ~1–2 minutes for project to be ready
+- Supabase project created (Asia Pacific / Singapore recommended)
+- Role in SQL Editor: **postgres**
 
 ---
 
-## Step 2 — Get API Keys
-
-1. In Supabase Dashboard → **Project Settings** (gear icon) → **API**
-2. Copy:
-   - **Project URL**
-   - **anon public** key
-
----
-
-## Step 3 — Add Environment Variables
-
-In your project root create a file named `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-Paste the values you copied.
-
----
-
-## Step 4 — Run Database Schema
+## Step 1 — Run Schema
 
 1. Supabase Dashboard → **SQL Editor** → **New query**
-2. Open the file `supabase/schema.sql` from this repo
-3. Copy **all** content and paste into the SQL Editor
-4. Click **Run**
-5. You should see "Success. No rows returned"
+2. Open `supabase/schema.sql` from this repo
+3. Paste **all** content → **Run**
+
+If you see `permission denied for schema public`, run this first, then re-run schema:
+
+```sql
+GRANT USAGE, CREATE ON SCHEMA public TO postgres;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+```
+
+### Verify
+
+Run queries in `supabase/verify.sql` (V1–V5).
+
+Expected tables:
+- `admins`
+- `tournaments`
+- `tournament_room_credentials`
 
 ---
 
-## Step 5 — Create First Admin Account
+## Step 2 — Create Auth User
 
-### 5.1 Create Auth User
+1. **Authentication** → **Users** → **Add user**
+2. Email + password
+3. **Auto Confirm User** → ON
+4. Copy **User UID**
 
-1. Supabase Dashboard → **Authentication** → **Users**
-2. Click **Add user** → **Create new user**
-3. Enter email + password (this will be your admin login)
-4. Turn **ON** "Auto Confirm User"
-5. Click **Create user**
-6. Copy the **User UID** (looks like `a1b2c3d4-...`)
+---
 
-### 5.2 Add to Admins Table
-
-1. Go to **SQL Editor** → New query
-2. Run this (replace values):
+## Step 3 — Register Admin (SQL only — max 3)
 
 ```sql
 insert into public.admins (id, email, name)
@@ -68,69 +51,53 @@ values (
 );
 ```
 
+Admin rows cannot be created via the browser API (by design).
+
 ---
 
-## Step 6 — Install Packages & Run
+## Step 4 — Environment Variables
+
+`.env.local` (local) and Vercel → Environment Variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Never put the **service_role** key in the frontend or commit it.
+
+---
+
+## Step 5 — Run App
 
 ```bash
-npm install @supabase/supabase-js @supabase/ssr
+npm install
 npm run dev
 ```
 
-Open: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
+Open: http://localhost:3000/admin/login
 
-Login with the email + password you created.
-
----
-
-## Step 7 — Enable Authenticator App (2FA)
-
-After first login:
-
-1. Go to [http://localhost:3000/admin/mfa](http://localhost:3000/admin/mfa)
-2. Scan the QR code with **Google Authenticator** or **Authy**
-3. Enter the 6-digit code to confirm
-
-From now on every login will ask for the Authenticator code.
+1. Sign in with email/password
+2. If MFA not enrolled → redirected to `/admin/mfa`
+3. Scan QR with Google Authenticator / Authy
+4. Every later login requires the 6-digit code (AAL2)
 
 ---
 
-## Add More Admins (max 3)
+## Security Architecture
 
-Repeat Step 5 for each new admin (create Auth user → insert into `admins` table).
-
-The database will automatically reject a 4th admin.
-
----
-
-## What Admin Panel Can Do
-
-| Feature | Route |
-|---------|-------|
-| Dashboard | `/admin` |
-| All Tournaments | `/admin/tournaments` |
-| Create Tournament | `/admin/tournaments/new` |
-| Edit Tournament | `/admin/tournaments/[id]/edit` |
-| Setup 2FA | `/admin/mfa` |
-| Login | `/admin/login` |
-
-You can fully control:
-- Title (EN + BN)
-- Mode / Map / Status
-- Entry fee & Prize pool
-- Slots
-- Start time
-- Room ID + Password
-- Cover image
-- Description
+| Concern | Implementation |
+|--------|----------------|
+| Admin check | `public.is_admin()` SECURITY DEFINER + fixed `search_path` |
+| RLS recursion | Policies use `is_admin()`, never self-query `admins` in USING |
+| Max 3 admins | Trigger + `pg_advisory_xact_lock` |
+| Room secrets | `tournament_room_credentials` — admin-only RLS |
+| MFA | Mandatory TOTP; `requireAdmin()` enforces AAL2 server-side |
+| Admin create | SQL Editor / postgres only |
 
 ---
 
-## Deploy to Vercel
+## Known limitations
 
-1. Push code to GitHub
-2. Import project in Vercel
-3. Add the same 2 environment variables in Vercel → Settings → Environment Variables
-4. Deploy
-
-Done.
+- Public site tournament list still uses seed data until wired to Supabase.
+- Room credentials are never returned by public tournament SELECT policies.

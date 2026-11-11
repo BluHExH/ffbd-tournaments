@@ -10,7 +10,6 @@ export type SortOption = "starting-soon" | "biggest-prize" | "lowest-entry";
 
 export interface Tournament {
   id: string;
-  /** Public serial UID e.g. #FF001 */
   uid: string;
   slug: string;
   title: string;
@@ -31,7 +30,6 @@ export interface Tournament {
   roomPassword?: string | null;
 }
 
-/** Shape coming from Supabase (snake_case) */
 export interface TournamentRow {
   id: string;
   uid: string;
@@ -50,13 +48,21 @@ export interface TournamentRow {
   map: MapName;
   description: string | null;
   description_bn: string | null;
-  room_id: string | null;
-  room_password: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export function mapRowToTournament(row: TournamentRow): Tournament {
+export interface RoomCredentialsRow {
+  tournament_id: string;
+  room_id: string | null;
+  room_password: string | null;
+  updated_at: string;
+}
+
+export function mapRowToTournament(
+  row: TournamentRow,
+  credentials?: RoomCredentialsRow | null
+): Tournament {
   return {
     id: row.id,
     uid: row.uid,
@@ -75,8 +81,8 @@ export function mapRowToTournament(row: TournamentRow): Tournament {
     map: row.map,
     description: row.description || undefined,
     descriptionBn: row.description_bn || undefined,
-    roomId: row.room_id,
-    roomPassword: row.room_password,
+    roomId: credentials?.room_id ?? null,
+    roomPassword: credentials?.room_password ?? null,
   };
 }
 

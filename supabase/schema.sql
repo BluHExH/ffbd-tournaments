@@ -1,128 +1,193 @@
 -- ============================================================
--- FFBD Tournaments - Supabase Schema
--- Run this in Supabase Dashboard → SQL Editor → New query
+-- BANGLAR TOURNAMENTS — Secure Schema (v2)
+-- Run in Supabase SQL Editor as role: postgres
+-- Safe on empty public schema. Idempotent where possible.
 -- ============================================================
 
--- 1. Admins table (max 3 admins)
-create table if not exists public.admins (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text not null unique,
+-- 0. Schema privileges (fixes permission denied for schema public)
+GRANT USAGE, CREATE ON SCHEMA public TO postgres;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- ============================================================
+-- 1. admins
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.admins (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email text NOT NULL UNIQUE,
   name text,
-  created_at timestamptz not null default now()
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Enforce max 3 admins
-create or replace function public.check_admin_limit()
-returns trigger
-language plpgsql
-as $$
-begin
-  if (select count(*) from public.admins) >= 3 then
-    raise exception 'Maximum 3 admins allowed';
-  end if;
-  return new;
-end;
+-- Concurrency-safe max 3 admins (transaction-level advisory lock)
+CREATE OR REPLACE FUNCTION public.check_admin_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM pg_advisory_xact_lock(870031); -- serialize concurrent inserts
+  IF (SELECT count(*) FROM public.admins) >= 3 THEN
+    RAISE EXCEPTION 'Maximum 3 admins allowed';
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
-drop trigger if exists admin_limit_trigger on public.admins;
-create trigger admin_limit_trigger
-  before insert on public.admins
-  for each row execute function public.check_admin_limit();
+DROP TRIGGER IF EXISTS admin_limit_trigger ON public.admins;
+CREATE TRIGGER admin_limit_trigger
+  BEFORE INSERT ON public.admins
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_admin_limit();
 
--- 2. Tournaments table
-create table if not exists public.tournaments (
-  id uuid primary key default gen_random_uuid(),
-  uid text not null unique,                    -- e.g. #FF001
-  slug text not null unique,
-  title text not null,
-  title_bn text not null,
-  mode text not null check (mode in ('Solo', 'Duo', 'Squad')),
-  entry_fee integer not null default 0,
-  prize_pool integer not null default 0,
-  slots integer not null,
-  slots_filled integer not null default 0,
-  status text not null default 'upcoming' check (status in ('live', 'upcoming', 'ended')),
-  start_at timestamptz not null,
+-- ============================================================
+-- 2. tournaments (PUBLIC fields only — no room secrets)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.tournaments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  uid text NOT NULL UNIQUE,
+  slug text NOT NULL UNIQUE,
+  title text NOT NULL,
+  title_bn text NOT NULL,
+  mode text NOT NULL CHECK (mode IN ('Solo', 'Duo', 'Squad')),
+  entry_fee integer NOT NULL DEFAULT 0 CHECK (entry_fee >= 0),
+  prize_pool integer NOT NULL DEFAULT 0 CHECK (prize_pool >= 0),
+  slots integer NOT NULL CHECK (slots >= 1),
+  slots_filled integer NOT NULL DEFAULT 0 CHECK (slots_filled >= 0),
+  status text NOT NULL DEFAULT 'upcoming' CHECK (status IN ('live', 'upcoming', 'ended')),
+  start_at timestamptz NOT NULL,
   cover text,
-  region text not null default 'BD',
-  map text not null check (map in ('Bermuda', 'Purgatory', 'Kalahari', 'Alpine')),
+  region text NOT NULL DEFAULT 'BD',
+  map text NOT NULL CHECK (map IN ('Bermuda', 'Purgatory', 'Kalahari', 'Alpine')),
   description text,
   description_bn text,
-  room_id text,
-  room_password text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT slots_filled_lte_slots CHECK (slots_filled <= slots)
 );
 
--- Auto update updated_at
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
+CREATE INDEX IF NOT EXISTS idx_tournaments_status ON public.tournaments(status);
+CREATE INDEX IF NOT EXISTS idx_tournaments_start_at ON public.tournaments(start_at);
+CREATE INDEX IF NOT EXISTS idx_tournaments_slug ON public.tournaments(slug);
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
 $$;
 
-drop trigger if exists tournaments_updated_at on public.tournaments;
-create trigger tournaments_updated_at
-  before update on public.tournaments
-  for each row execute function public.set_updated_at();
+DROP TRIGGER IF EXISTS tournaments_updated_at ON public.tournaments;
+CREATE TRIGGER tournaments_updated_at
+  BEFORE UPDATE ON public.tournaments
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_updated_at();
 
--- Index for common queries
-create index if not exists idx_tournaments_status on public.tournaments(status);
-create index if not exists idx_tournaments_start_at on public.tournaments(start_at);
-create index if not exists idx_tournaments_slug on public.tournaments(slug);
+-- ============================================================
+-- 3. tournament_room_credentials (PRIVATE — admins only)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.tournament_room_credentials (
+  tournament_id uuid PRIMARY KEY REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  room_id text,
+  room_password text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
--- 3. Row Level Security
-alter table public.admins enable row level security;
-alter table public.tournaments enable row level security;
+DROP TRIGGER IF EXISTS room_credentials_updated_at ON public.tournament_room_credentials;
+CREATE TRIGGER room_credentials_updated_at
+  BEFORE UPDATE ON public.tournament_room_credentials
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_updated_at();
 
--- Admins: only authenticated admins can read the admins table
-create policy "Admins can read admins"
-  on public.admins for select
-  to authenticated
-  using (
-    exists (select 1 from public.admins a where a.id = auth.uid())
-  );
-
--- Tournaments: anyone can read (public website)
-create policy "Public can read tournaments"
-  on public.tournaments for select
-  to anon, authenticated
-  using (true);
-
--- Tournaments: only admins can insert/update/delete
-create policy "Admins can insert tournaments"
-  on public.tournaments for insert
-  to authenticated
-  with check (
-    exists (select 1 from public.admins a where a.id = auth.uid())
-  );
-
-create policy "Admins can update tournaments"
-  on public.tournaments for update
-  to authenticated
-  using (
-    exists (select 1 from public.admins a where a.id = auth.uid())
-  );
-
-create policy "Admins can delete tournaments"
-  on public.tournaments for delete
-  to authenticated
-  using (
-    exists (select 1 from public.admins a where a.id = auth.uid())
-  );
-
--- 4. Helper: check if current user is admin
-create or replace function public.is_admin()
-returns boolean
-language sql
-stable
-security definer
-as $$
-  select exists (
-    select 1 from public.admins where id = auth.uid()
+-- ============================================================
+-- 4. is_admin() — SECURITY DEFINER, no RLS recursion
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admins WHERE id = (SELECT auth.uid())
   );
 $$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+-- ============================================================
+-- 5. Row Level Security
+-- ============================================================
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tournament_room_credentials ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can read admins" ON public.admins;
+DROP POLICY IF EXISTS "Public can read tournaments" ON public.tournaments;
+DROP POLICY IF EXISTS "Admins can insert tournaments" ON public.tournaments;
+DROP POLICY IF EXISTS "Admins can update tournaments" ON public.tournaments;
+DROP POLICY IF EXISTS "Admins can delete tournaments" ON public.tournaments;
+
+CREATE POLICY "admins_select_for_admins"
+  ON public.admins FOR SELECT
+  TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "tournaments_select_public"
+  ON public.tournaments FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+CREATE POLICY "tournaments_insert_admin"
+  ON public.tournaments FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "tournaments_update_admin"
+  ON public.tournaments FOR UPDATE
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "tournaments_delete_admin"
+  ON public.tournaments FOR DELETE
+  TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "room_credentials_select_admin"
+  ON public.tournament_room_credentials FOR SELECT
+  TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "room_credentials_insert_admin"
+  ON public.tournament_room_credentials FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "room_credentials_update_admin"
+  ON public.tournament_room_credentials FOR UPDATE
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "room_credentials_delete_admin"
+  ON public.tournament_room_credentials FOR DELETE
+  TO authenticated
+  USING (public.is_admin());
+
+-- ============================================================
+-- 6. Table grants
+-- ============================================================
+GRANT SELECT ON public.tournaments TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.tournaments TO authenticated;
+
+GRANT SELECT ON public.admins TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tournament_room_credentials TO authenticated;

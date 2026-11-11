@@ -47,7 +47,7 @@ export default async function EditTournamentPage({
           </Link>
           <div className="min-w-0">
             <span className="font-heading font-bold text-sm">Edit Tournament</span>
-            <span className="ml-2 text-xs text-white/35 font-mono">{t.uid}</span>
+            <span className={"ml-2 text-xs text-white/35 font-mono"}>{t.uid}</span>
           </div>
         </div>
       </header>

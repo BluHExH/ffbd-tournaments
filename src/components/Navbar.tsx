@@ -6,6 +6,7 @@ import { Menu, X, Sun, Moon, Globe } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 
 export default function Navbar() {
   const { lang, setLang, t } = useLanguage();
@@ -37,10 +38,13 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#FF8A00] flex items-center justify-center font-heading text-white text-sm font-bold shadow-md">
-            FF
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={BRAND.logo}
+            alt="FFBD Logo"
+            className="w-10 h-10 rounded-xl object-cover shadow-md ring-1 ring-white/10"
+          />
           <span className="font-heading text-xl font-bold text-white tracking-tight">
             FFBD<span className="text-[#FF5C00]">.</span>
           </span>

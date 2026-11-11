@@ -5,6 +5,7 @@ import { Users, Swords, MapPin } from "lucide-react";
 import type { Tournament } from "@/types/tournament";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatBDT, cn } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 import LiveBadge from "./LiveBadge";
 import PrizeBadge from "./PrizeBadge";
 import CountdownTimer from "./CountdownTimer";
@@ -25,6 +26,7 @@ export default function TournamentCard({
   const slotsLeft = Math.max(0, t.slots - t.slotsFilled);
   const isFree = t.entryFee === 0;
   const isFull = t.slotsFilled >= t.slots;
+  const coverSrc = t.cover || BRAND.cover;
 
   return (
     <article
@@ -34,8 +36,18 @@ export default function TournamentCard({
         className
       )}
     >
-      <Link href={`/tournaments/${t.slug}`} className="block relative h-36 bg-gradient-to-br from-[#1A2332] to-[#0B1221] overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,92,0,0.25),_transparent_60%)]" />
+      <Link
+        href={`/tournaments/${t.slug}`}
+        className="block relative h-40 overflow-hidden bg-[#0B1221]"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={coverSrc}
+          alt={title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1221]/95 via-[#0B1221]/40 to-transparent" />
         <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           {t.status === "live" && <LiveBadge />}
           {t.status === "ended" && (
@@ -56,10 +68,10 @@ export default function TournamentCard({
         </div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end gap-2">
           <div className="flex gap-1.5 flex-wrap">
-            <span className="text-xs font-semibold text-white/80 bg-black/30 px-2 py-1 rounded-md backdrop-blur-sm">
+            <span className="text-xs font-semibold text-white/90 bg-black/40 px-2 py-1 rounded-md backdrop-blur-sm">
               {t.mode}
             </span>
-            <span className="text-xs font-semibold text-white/70 bg-black/30 px-2 py-1 rounded-md backdrop-blur-sm flex items-center gap-1">
+            <span className="text-xs font-semibold text-white/80 bg-black/40 px-2 py-1 rounded-md backdrop-blur-sm flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {t.map}
             </span>
@@ -68,7 +80,7 @@ export default function TournamentCard({
             <CountdownTimer
               target={t.startAt}
               compact
-              className="text-white bg-black/40 px-2 py-1 rounded-md backdrop-blur-sm"
+              className="text-white bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm"
             />
           )}
         </div>

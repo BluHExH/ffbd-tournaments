@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 export type TournamentMode = "Solo" | "Duo" | "Squad";
 export type TournamentStatus = "live" | "upcoming" | "ended";
 export type MapName = "Bermuda" | "Purgatory" | "Kalahari" | "Alpine";
@@ -52,7 +54,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 41,
     status: "live",
     startAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
-    cover: "/images/cover-solo.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Bermuda",
   },
@@ -68,7 +70,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 18,
     status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 5).toISOString(),
-    cover: "/images/cover-squad.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Bermuda",
   },
@@ -84,7 +86,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 29,
     status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 28).toISOString(),
-    cover: "/images/cover-duo.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Purgatory",
   },
@@ -100,7 +102,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 12,
     status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 50).toISOString(),
-    cover: "/images/cover-free.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Kalahari",
   },
@@ -116,7 +118,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 48,
     status: "ended",
     startAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    cover: "/images/cover-pro.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Alpine",
   },
@@ -132,7 +134,7 @@ export const tournaments: Tournament[] = [
     slotsFilled: 9,
     status: "upcoming",
     startAt: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
-    cover: "/images/cover-grand.jpg",
+    cover: BRAND.cover,
     region: "BD",
     map: "Bermuda",
   },

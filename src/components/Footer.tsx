@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Facebook, Youtube, MessageCircle, Send } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { BRAND } from "@/lib/brand";
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -19,10 +20,13 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#FF8A00] flex items-center justify-center font-heading text-white text-sm font-bold">
-                FF
-              </div>
+            <div className="flex items-center gap-2.5 mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND.logo}
+                alt="FFBD Logo"
+                className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10"
+              />
               <span className="font-heading text-xl font-bold text-white">
                 FFBD<span className="text-[#FF5C00]">.</span>
               </span>

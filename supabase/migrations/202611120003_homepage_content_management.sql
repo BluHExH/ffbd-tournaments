@@ -37,6 +37,27 @@ CREATE TABLE IF NOT EXISTS public.homepage_payouts (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Repair defaults/type if an earlier version of this migration was already run.
+ALTER TABLE public.homepage_teams
+  ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE public.homepage_payouts
+  ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'homepage_payouts'
+      AND column_name = 'date'
+      AND data_type = 'date'
+  ) THEN
+    ALTER TABLE public.homepage_payouts
+      ALTER COLUMN date TYPE timestamptz
+      USING date::timestamp AT TIME ZONE 'Asia/Dhaka';
+  END IF;
+END $;
+
 ALTER TABLE public.homepage_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.homepage_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.homepage_payouts ENABLE ROW LEVEL SECURITY;

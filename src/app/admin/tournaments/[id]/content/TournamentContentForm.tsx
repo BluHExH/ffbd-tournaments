@@ -28,7 +28,7 @@ export function TournamentContentForm({tournamentId,initial}:{tournamentId:strin
   }
   const cls="w-full rounded-xl border border-white/10 bg-[#0B1221] p-3 font-mono text-xs leading-5 text-white/85 outline-none focus:border-[#FF7130]";
   return <form onSubmit={submit} className="space-y-5">
-    <div className="rounded-xl border border-sky-400/20 bg-sky-400/5 p-4 text-xs leading-5 text-sky-100/70">Edit the content shown inside this tournament's Rules, Schedule and Prizes tabs. JSON must be valid. The examples show the expected structure.</div>
+    <div className="rounded-xl border border-sky-400/20 bg-sky-400/5 p-4 text-xs leading-5 text-sky-100/70">Edit the content shown inside this tournament&apos;s Rules, Schedule and Prizes tabs. JSON must be valid. The examples show the expected structure.</div>
     {fields.map(f=><label key={f.key} className="block rounded-xl border border-white/10 bg-white/[0.025] p-4"><span className="mb-2 block text-sm font-semibold text-white">{f.label}</span><textarea required rows={5} className={cls} value={values[f.key]} onChange={e=>setValues(v=>({...v,[f.key]:e.target.value}))}/><span className="mt-2 block text-[10px] text-white/35">Example: {f.sample}</span></label>)}
     <label className="block"><span className="mb-2 block text-sm font-semibold text-white">Organizer Note</span><textarea rows={3} className={cls} value={organizerNote} onChange={e=>setOrganizerNote(e.target.value)}/></label>
     <label className="block"><span className="mb-2 block text-sm font-semibold text-white">Matches Description</span><textarea rows={2} className={cls} value={matchesDescription} onChange={e=>setMatchesDescription(e.target.value)}/></label>

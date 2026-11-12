@@ -46,7 +46,7 @@ export function AdminDataManager({
     const payload: Row = {};
     for (const field of fields) {
       const raw = values[field.key];
-      payload[field.key] = field.type === "number" ? (raw === "" || raw == null ? 0 : Number(raw)) : raw ?? "";
+      payload[field.key] = field.type === "number" ? (raw === "" || raw == null ? 0 : Number(raw)) : field.type === "date" && raw ? new Date(String(raw)).toISOString() : raw ?? field.options?.[0] ?? "";
     }
     const result = editing
       ? await supabase.from(table).update(payload).eq(primaryKey, editing)
@@ -88,7 +88,7 @@ export function AdminDataManager({
           {field.key === "tournament_id" ? <select required={field.required} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}><option value="">Choose tournament</option>{tournamentOptions.map(t => <option key={t.id} value={t.id}>{t.uid} · {t.title}</option>)}</select>
           : field.type === "select" ? <select className={inputClass} value={String(values[field.key] ?? field.options?.[0] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}>{(field.options || []).map(o => <option key={o} value={o}>{o}</option>)}</select>
           : field.type === "textarea" ? <textarea required={field.required} rows={3} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>
-          : <input required={field.required} type={field.type === "number" ? "number" : field.type === "date" ? "datetime-local" : "text"} min={field.type === "number" ? 0 : undefined} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>}
+          : <input required={field.required} type={field.type === "number" ? "number" : field.type === "date" ? "datetime-local" : "text"} min={field.type === "number" ? 0 : undefined} className={inputClass} value={String(values[field.key] ?? "").slice(0,16)} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>}
         </label>)}
       </div>
       <div className="mt-5 flex gap-2"><button disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#FF5C00] px-5 text-sm font-bold text-white disabled:opacity-50">{saving && <Loader2 className="h-4 w-4 animate-spin"/>}Save</button><button type="button" onClick={() => setShowForm(false)} className="h-10 rounded-lg border border-white/10 px-4 text-sm text-white/60">Cancel</button></div>

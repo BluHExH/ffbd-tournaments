@@ -6,8 +6,6 @@ import { BRAND } from "@/lib/brand";
 import {
   FacebookIcon,
   TelegramIcon,
-  WhatsAppIcon,
-  YouTubeIcon,
 } from "@/components/SocialIcons";
 
 export default function Footer() {
@@ -25,18 +23,6 @@ export default function Footer() {
       href: BRAND.social.telegram,
       label: "Telegram",
       color: "hover:text-[#26A5E4] hover:border-[#26A5E4]/50 hover:bg-[#26A5E4]/10",
-    },
-    {
-      icon: WhatsAppIcon,
-      href: BRAND.social.telegram,
-      label: "WhatsApp",
-      color: "hover:text-[#25D366] hover:border-[#25D366]/50 hover:bg-[#25D366]/10",
-    },
-    {
-      icon: YouTubeIcon,
-      href: BRAND.social.facebook,
-      label: "YouTube",
-      color: "hover:text-[#FF0000] hover:border-[#FF0000]/50 hover:bg-[#FF0000]/10",
     },
   ];
 

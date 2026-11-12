@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTournamentBySlug, getRelatedTournaments } from "@/services/tournamentService";
 import TournamentDetailClient from "./TournamentDetailClient";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function TournamentDetailPage({ params }: Props) {
     getRelatedTournaments(slug, 3),
   ]);
   if (!tournament) notFound();
-  const db = await (await import("@/lib/supabase/server")).createClient();
+  const db = await createClient();
   const [
     { data: content },
     { data: participants },

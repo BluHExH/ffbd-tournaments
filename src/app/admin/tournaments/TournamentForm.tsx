@@ -102,12 +102,12 @@ export function TournamentForm({
       return "UID, slug, and titles are required.";
     }
     if (
-      !Number.isFinite(form.entryFee) ||
-      !Number.isFinite(form.prizePool) ||
+      !Number.isInteger(form.entryFee) ||
+      !Number.isInteger(form.prizePool) ||
       form.entryFee < 0 ||
       form.prizePool < 0
     ) {
-      return "Entry fee and prize pool must be valid non-negative numbers.";
+      return "Entry fee and prize pool must be whole, non-negative BDT amounts.";
     }
     if (!Number.isInteger(form.slots) || form.slots < 1) {
       return "Slots must be at least 1.";
@@ -247,10 +247,10 @@ export function TournamentForm({
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Entry Fee (BDT)">
-            <input type="number" min={0} value={form.entryFee} onChange={(e) => update("entryFee", Number(e.target.value))} className={inputCls} />
+            <input type="number" min={0} step={1} value={form.entryFee} onChange={(e) => update("entryFee", Number(e.target.value))} className={inputCls} />
           </Field>
           <Field label="Prize Pool (BDT)">
-            <input type="number" min={0} value={form.prizePool} onChange={(e) => update("prizePool", Number(e.target.value))} className={inputCls} />
+            <input type="number" min={0} step={1} value={form.prizePool} onChange={(e) => update("prizePool", Number(e.target.value))} className={inputCls} />
           </Field>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">

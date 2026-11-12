@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.homepage_stats (
 );
 
 CREATE TABLE IF NOT EXISTS public.homepage_teams (
-  id text PRIMARY KEY,
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name text NOT NULL,
   logo text NOT NULL DEFAULT '',
   kills integer NOT NULL DEFAULT 0 CHECK (kills >= 0),
@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS public.homepage_teams (
 );
 
 CREATE TABLE IF NOT EXISTS public.homepage_payouts (
-  id text PRIMARY KEY,
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name text NOT NULL,
   team text,
   amount bigint NOT NULL DEFAULT 0 CHECK (amount >= 0),
   tournament text NOT NULL DEFAULT '',
-  date date NOT NULL DEFAULT CURRENT_DATE,
+  date timestamptz NOT NULL DEFAULT now(),
   method text NOT NULL DEFAULT 'bKash',
   created_at timestamptz NOT NULL DEFAULT now()
 );

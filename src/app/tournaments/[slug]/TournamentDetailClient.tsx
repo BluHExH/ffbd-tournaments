@@ -88,7 +88,7 @@ export default function TournamentDetailClient({
   const canRegister = !isFull && !isClosed;
   const map = t.map || "Bermuda";
   const prizes = Array.isArray(content?.prizes) ? content.prizes as {place:string;amount:number}[] : defaultPrizes(t.prizePool, t.mode);
-  const schedule = Array.isArray(content?.schedule) ? content.schedule as {match:number;map:string;time:string;status:string}[] : defaultSchedule(t.startAt, map);
+  const schedule = matches.length ? matches.map(m => ({ match: m.match_number, map: m.map, time: m.start_at || "", status: m.status })) : Array.isArray(content?.schedule) ? content.schedule as {match:number;map:string;time:string;status:string}[] : defaultSchedule(t.startAt, map);
   const rules = Array.isArray(content?.rules) ? content.rules as string[] : GENERAL_RULES[lang];
   const bannedItems = Array.isArray(content?.banned_items) ? content.banned_items as string[] : BANNED[lang];
   const penalties = Array.isArray(content?.penalties) ? content.penalties as {offense:Record<string,string>;action:Record<string,string>}[] : PENALTIES;

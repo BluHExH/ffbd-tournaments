@@ -8,11 +8,11 @@ type Field = { key: string; label: string; type?: "text" | "number" | "date" | "
 type Row = Record<string, unknown> & { id?: string; key?: string };
 
 export function AdminDataManager({
-  title, description, table, fields, tournamentOptions = [], orderBy = "created_at", primaryKey = "id",
+  title, description, table, fields, tournamentOptions = [], orderBy = "created_at", primaryKey = "id", allowCreate = true, allowDelete = true,
 }: {
   title: string; description: string; table: string; fields: Field[];
   tournamentOptions?: { id: string; title: string; uid: string }[];
-  orderBy?: string; primaryKey?: string;
+  orderBy?: string; primaryKey?: string; allowCreate?: boolean; allowDelete?: boolean;
 }) {
   const [supabase] = useState(() => createClient());
   const [rows, setRows] = useState<Row[]>([]);
@@ -77,7 +77,7 @@ export function AdminDataManager({
       <div><div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF7130]">Control center / Management</div>
         <h1 className="font-heading text-3xl font-bold text-white">{title}</h1><p className="mt-2 text-sm text-white/40">{description}</p></div>
       <div className="flex gap-2"><button onClick={() => void load()} className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-white/65"><RefreshCw className="h-4 w-4"/> Refresh</button>
-        <button onClick={() => begin()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#FF5C00] px-4 text-sm font-bold text-white"><Plus className="h-4 w-4"/> Add New</button></div>
+        {allowCreate && <button onClick={() => begin()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#FF5C00] px-4 text-sm font-bold text-white"><Plus className="h-4 w-4"/> Add New</button>}</div>
     </div>
     {error && <p className="mb-4 rounded-lg border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-300">{error}</p>}
     {notice && <p className="mb-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-3 text-sm text-emerald-300">{notice}</p>}
@@ -96,7 +96,7 @@ export function AdminDataManager({
     <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121C2E]">
       {loading ? <div className="flex items-center justify-center gap-2 p-12 text-sm text-white/45"><Loader2 className="h-4 w-4 animate-spin"/>Loading records…</div> : rows.length === 0 ? <div className="p-12 text-center text-sm text-white/40">No records yet. Use Add New to create one.</div> :
       <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-white/[0.03] text-[10px] uppercase tracking-wider text-white/40"><tr>{fields.map(f => <th key={f.key} className="px-4 py-3">{f.label}</th>)}<th className="px-4 py-3 text-right">Actions</th></tr></thead>
-        <tbody className="divide-y divide-white/[0.06]">{rows.map((row,i) => <tr key={String(row[primaryKey] ?? i)} className="hover:bg-white/[0.02]">{fields.map(f => <td key={f.key} className="max-w-[240px] truncate px-4 py-3 text-white/70">{display(row,f)}</td>)}<td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => begin(row)} aria-label="Edit" className="rounded-lg border border-white/10 p-2 text-white/65 hover:text-white"><Pencil className="h-4 w-4"/></button><button onClick={() => void remove(row)} aria-label="Delete" className="rounded-lg border border-red-400/15 p-2 text-red-300/70 hover:text-red-300"><Trash2 className="h-4 w-4"/></button></div></td></tr>)}</tbody></table></div>}
+        <tbody className="divide-y divide-white/[0.06]">{rows.map((row,i) => <tr key={String(row[primaryKey] ?? i)} className="hover:bg-white/[0.02]">{fields.map(f => <td key={f.key} className="max-w-[240px] truncate px-4 py-3 text-white/70">{display(row,f)}</td>)}<td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => begin(row)} aria-label="Edit" className="rounded-lg border border-white/10 p-2 text-white/65 hover:text-white"><Pencil className="h-4 w-4"/></button>{allowDelete && <button onClick={() => void remove(row)} aria-label="Delete" className="rounded-lg border border-red-400/15 p-2 text-red-300/70 hover:text-red-300"><Trash2 className="h-4 w-4"/></button>}</div></td></tr>)}</tbody></table></div>}
     </section>
   </main>;
 }

@@ -81,7 +81,7 @@ $$;
 DO $$
 DECLARE tbl text;
 BEGIN
-  FOREACH tbl IN ARRAY ARRAY['tournament_content','tournament_participants','tournament_payments','tournament_matches','tournament_results','website_settings']
+  FOREACH tbl IN ARRAY ARRAY['tournament_content','tournament_participants','tournament_payments','tournament_matches','tournament_results']
   LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_public_read', tbl);

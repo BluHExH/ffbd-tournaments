@@ -121,7 +121,7 @@ function AdminLoginInner() {
         return;
       }
 
-      const { data: adminRow, error: adminError } = await supabase
+      const { data: adminRow, error: adminError } = await client
         .from("admins")
         .select("id")
         .eq("id", data.user.id)

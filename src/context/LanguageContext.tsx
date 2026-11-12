@@ -141,7 +141,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("ffbd-lang") as Lang | null;
-    if (saved === "en" || saved === "bn") setLangState(saved);
+    const initialLang: Lang = saved === "bn" ? "bn" : "en";
+    setLangState(initialLang);
+    document.documentElement.lang = initialLang;
   }, []);
 
   const setLang = useCallback((l: Lang) => {

@@ -55,7 +55,7 @@ export default function TournamentsPage() {
       );
     }
     return list;
-  }, [mode, entry, status, search]);
+  }, [tournaments, mode, entry, status, search]);
 
   const shown = filtered.slice(0, visible);
 

@@ -34,7 +34,7 @@ export default function MfaEnrollPage() {
         return;
       }
 
-      const { data: admin, error: adminError } = await supabase
+      const { data: admin, error: adminError } = await client
         .from("admins")
         .select("id")
         .eq("id", user.id)

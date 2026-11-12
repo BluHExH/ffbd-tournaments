@@ -39,7 +39,7 @@ export function AdminDataManager({
     if (result.error) {
       setError(result.error.message);
     } else {
-      setRows((result.data ?? []) as Row[]);
+      setRows((result.data ?? []) as unknown as Row[]);
     }
     setLoading(false);
   }, [supabase, table, selectedColumns, orderBy, orderAscending]);
@@ -74,7 +74,7 @@ export function AdminDataManager({
     if (result.error) {
       setError(result.error.message);
     } else {
-      const saved = result.data as Row;
+      const saved = result.data as unknown as Row;
       setRows((current) => {
         const next = editing
           ? current.map((row) => String(row[primaryKey]) === editing ? saved : row)

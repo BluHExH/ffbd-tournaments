@@ -215,6 +215,7 @@ export default function HomePage() {
                   <div className="min-w-0">
                     <div className="font-semibold text-[#0F172A] text-sm truncate">{w.name}</div>
                     <div className="text-xs text-slate-500 truncate">{w.tournament}</div>
+                    <div className="text-[10px] text-slate-400 truncate">{w.team || new Date(w.date).toLocaleDateString("en-GB", { timeZone: "Asia/Dhaka" })}</div>
                   </div>
                   <div className="ml-auto text-right shrink-0">
                     <div className="font-bold text-emerald-600 text-sm">{formatBDT(w.amount)}</div>

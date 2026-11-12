@@ -20,8 +20,8 @@ export default function TeamCard({ team, className }: Props) {
       )}
     >
       <div className="relative">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0B1221] to-[#1A2332] flex items-center justify-center text-white font-heading text-xl font-bold shadow-md ring-2 ring-[#FF5C00]/20">
-          {team.name.charAt(0)}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0B1221] to-[#1A2332] flex items-center justify-center text-white font-heading text-xl font-bold shadow-md ring-2 ring-[#FF5C00]/20 overflow-hidden">
+          {team.logo ? <img src={team.logo} alt={`${team.name} logo`} className="h-full w-full object-cover" /> : team.name.charAt(0)}
         </div>
         <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#FF5C00] text-white text-xs font-bold flex items-center justify-center shadow">
           {team.rank}

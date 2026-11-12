@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS public.tournament_participants (
   display_name text NOT NULL,
   team_name text,
   game_uid text,
-  contact text,
   slot_number integer,
   status text NOT NULL DEFAULT 'registered' CHECK (status IN ('registered','confirmed','rejected','cancelled')),
   created_at timestamptz NOT NULL DEFAULT now()
@@ -81,15 +80,13 @@ $$;
 DO $$
 DECLARE tbl text;
 BEGIN
-  FOREACH tbl IN ARRAY ARRAY['tournament_content','tournament_participants','tournament_payments','tournament_matches','tournament_results']
+  FOREACH tbl IN ARRAY ARRAY['tournament_content','tournament_participants','tournament_payments','tournament_matches','tournament_results','website_settings']
   LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_public_read', tbl);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_admin_all', tbl);
-    IF tbl <> 'website_settings' THEN
-      IF tbl IN ('tournament_content','tournament_participants','tournament_matches','tournament_results','website_settings') THEN
-        EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', tbl || '_public_read', tbl);
-      END IF;
+    IF tbl IN ('tournament_content','tournament_participants','tournament_matches','tournament_results') THEN
+      EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', tbl || '_public_read', tbl);
     END IF;
     EXECUTE format('CREATE POLICY %I ON public.%I FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin())', tbl || '_admin_all', tbl);
     EXECUTE format('GRANT SELECT ON public.%I TO anon, authenticated', tbl);

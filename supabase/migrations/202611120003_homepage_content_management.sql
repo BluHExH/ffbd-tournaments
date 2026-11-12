@@ -43,7 +43,7 @@ ALTER TABLE public.homepage_teams
 ALTER TABLE public.homepage_payouts
   ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
 
-DO $
+DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -56,7 +56,7 @@ BEGIN
       ALTER COLUMN date TYPE timestamptz
       USING date::timestamp AT TIME ZONE 'Asia/Dhaka';
   END IF;
-END $;
+END $$;
 
 ALTER TABLE public.homepage_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.homepage_teams ENABLE ROW LEVEL SECURITY;

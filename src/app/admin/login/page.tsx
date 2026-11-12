@@ -10,7 +10,7 @@ type Step = "password" | "mfa";
 function AdminLoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
 
   const [step, setStep] = useState<Step>(
     searchParams.get("step") === "mfa" ? "mfa" : "password"
@@ -28,10 +28,12 @@ function AdminLoginInner() {
 
     async function bootstrap() {
       try {
+        const client = createClient();
+        setSupabase(client);
         const {
           data: { user },
           error: userError,
-        } = await supabase.auth.getUser();
+        } = await client.auth.getUser();
 
         if (userError || !user) {
           if (!cancelled) setBootstrapping(false);
@@ -39,7 +41,7 @@ function AdminLoginInner() {
         }
 
         const { data: aal, error: aalError } =
-          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          await client.auth.mfa.getAuthenticatorAssuranceLevel();
 
         if (aalError) {
           if (!cancelled) {
@@ -55,7 +57,7 @@ function AdminLoginInner() {
         }
 
         const { data: factors, error: factorsError } =
-          await supabase.auth.mfa.listFactors();
+          await client.auth.mfa.listFactors();
 
         if (factorsError) {
           if (!cancelled) {
@@ -88,16 +90,21 @@ function AdminLoginInner() {
     return () => {
       cancelled = true;
     };
-  }, [router, supabase.auth]);
+  }, [router]);
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) {
+      setError("Supabase is not configured. Add the public Supabase URL and anon key, then rebuild.");
+      return;
+    }
+    const client = supabase;
     setLoading(true);
     setError(null);
 
     try {
       const { data, error: signInError } =
-        await supabase.auth.signInWithPassword({
+        await client.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
@@ -121,21 +128,21 @@ function AdminLoginInner() {
         .maybeSingle();
 
       if (adminError) {
-        await supabase.auth.signOut();
+        await client.auth.signOut();
         setError(adminError.message);
         setLoading(false);
         return;
       }
 
       if (!adminRow) {
-        await supabase.auth.signOut();
+        await client.auth.signOut();
         setError("You are not authorized as an admin.");
         setLoading(false);
         return;
       }
 
       const { data: factorsData, error: factorsError } =
-        await supabase.auth.mfa.listFactors();
+        await client.auth.mfa.listFactors();
 
       if (factorsError) {
         setError(factorsError.message);
@@ -164,6 +171,11 @@ function AdminLoginInner() {
 
   async function handleMfaVerify(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) {
+      setError("Supabase is not configured. Add the public Supabase URL and anon key, then rebuild.");
+      return;
+    }
+    const client = supabase;
     if (!factorId) {
       setError("No authenticator factor found. Sign in again.");
       return;
@@ -174,7 +186,7 @@ function AdminLoginInner() {
 
     try {
       const { data: challenge, error: challengeError } =
-        await supabase.auth.mfa.challenge({ factorId });
+        await client.auth.mfa.challenge({ factorId });
 
       if (challengeError) {
         setError(challengeError.message);
@@ -188,7 +200,7 @@ function AdminLoginInner() {
         return;
       }
 
-      const { error: verifyError } = await supabase.auth.mfa.verify({
+      const { error: verifyError } = await client.auth.mfa.verify({
         factorId,
         challengeId: challenge.id,
         code: otp.trim(),
@@ -201,7 +213,7 @@ function AdminLoginInner() {
       }
 
       const { data: aal, error: aalError } =
-        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        await client.auth.mfa.getAuthenticatorAssuranceLevel();
 
       if (aalError || aal?.currentLevel !== "aal2") {
         setError(

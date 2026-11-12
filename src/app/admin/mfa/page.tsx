@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, Loader2, CheckCircle2 } from "lucide-react";
@@ -8,6 +8,7 @@ import { Shield, Loader2, CheckCircle2 } from "lucide-react";
 export default function MfaEnrollPage() {
   const router = useRouter();
   const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
+  const initStarted = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState<string | null>(null);
@@ -19,7 +20,10 @@ export default function MfaEnrollPage() {
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    // React Strict Mode re-runs effects in development. Guard the enrollment
+    // request so we never create two TOTP factors for the same admin session.
+    if (initStarted.current) return;
+    initStarted.current = true;
 
     async function init() {
       const client = createClient();
@@ -49,7 +53,7 @@ export default function MfaEnrollPage() {
       const { data: aal, error: aalError } =
         await client.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aalError) {
-        if (!cancelled) {
+        {
           setError(aalError.message);
           setLoading(false);
         }
@@ -64,7 +68,7 @@ export default function MfaEnrollPage() {
         await client.auth.mfa.listFactors();
 
       if (factorsError) {
-        if (!cancelled) {
+        {
           setError(factorsError.message);
           setLoading(false);
         }
@@ -88,7 +92,7 @@ export default function MfaEnrollPage() {
           factorId: f.id,
         });
         if (unenrollError) {
-          if (!cancelled) {
+          {
             setError(`Unable to clear an incomplete authenticator: ${unenrollError.message}`);
             setLoading(false);
           }
@@ -102,7 +106,7 @@ export default function MfaEnrollPage() {
       });
 
       if (enrollError) {
-        if (!cancelled) {
+        {
           setError(enrollError.message);
           setLoading(false);
         }
@@ -110,14 +114,14 @@ export default function MfaEnrollPage() {
       }
 
       if (!data?.totp) {
-        if (!cancelled) {
+        {
           setError("Enrollment response missing TOTP data.");
           setLoading(false);
         }
         return;
       }
 
-      if (!cancelled) {
+      {
         setFactorId(data.id);
         setQr(data.totp.qr_code);
         setSecret(data.totp.secret);
@@ -126,16 +130,13 @@ export default function MfaEnrollPage() {
     }
 
     init().catch((cause: unknown) => {
-      if (!cancelled) {
+      {
         setError(
           cause instanceof Error ? cause.message : "Unable to initialize MFA enrollment."
         );
         setLoading(false);
       }
     });
-    return () => {
-      cancelled = true;
-    };
   }, [router]);
 
   async function handleVerify(e: React.FormEvent) {

@@ -365,6 +365,10 @@ function AdminLoginInner() {
                   setOtp("");
                   setFactorId(null);
                   setError(null);
+                  if (!supabase) {
+                    setError("Supabase is not configured. Add the public Supabase URL and anon key, then rebuild.");
+                    return;
+                  }
                   await supabase.auth.signOut();
                   router.replace("/admin/login");
                 }}

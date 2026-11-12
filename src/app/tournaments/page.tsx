@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TournamentCard from "@/components/TournamentCard";
 import SectionHeading from "@/components/SectionHeading";
 import { useLanguage } from "@/context/LanguageContext";
-import { tournaments } from "@/data/seed";
+import { createClient } from "@/lib/supabase/client";
+import { mapRowToTournament, type TournamentRow } from "@/types/tournament";
+import type { Tournament } from "@/types/tournament";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,19 @@ export default function TournamentsPage() {
   const [status, setStatus] = useState<Status>("all");
   const [search, setSearch] = useState("");
   const [visible, setVisible] = useState(6);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    supabase.from("tournaments").select("*").order("start_at", { ascending: true }).then(({ data, error }) => {
+      if (!active) return;
+      if (error) setLoadError(true);
+      else setTournaments((data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
+    });
+    return () => { active = false; };
+  }, []);
 
   const filtered = useMemo(() => {
     let list = [...tournaments];
@@ -121,7 +136,9 @@ export default function TournamentsPage() {
               <span className="text-white font-semibold">{filtered.length}</span> tournaments
             </p>
 
-            {filtered.length === 0 ? (
+            {loadError ? (
+              <div className="py-16 text-center text-sm text-red-300">Unable to load tournaments. Please refresh the page.</div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-white/60 mb-4">{t("tournaments.empty")}</p>
                 <button type="button" onClick={reset} className="btn btn-primary">

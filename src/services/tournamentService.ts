@@ -1,76 +1,49 @@
-import { tournaments } from "@/data/seed";
-import type {
-  Tournament,
-  ModeFilter,
-  EntryFilter,
-  StatusFilter,
-  MapFilter,
-  SortOption,
-} from "@/types/tournament";
+import { createClient } from "@/lib/supabase/server";
+import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
 
 export interface TournamentFilters {
-  mode?: ModeFilter;
-  entry?: EntryFilter;
-  status?: StatusFilter;
-  map?: MapFilter;
+  mode?: "Solo" | "Duo" | "Squad" | "all";
+  entry?: "all" | "free" | "paid";
+  status?: "live" | "upcoming" | "ended" | "all";
+  map?: "Bermuda" | "Purgatory" | "Kalahari" | "Alpine" | "all";
   search?: string;
-  sort?: SortOption;
+  sort?: "starting-soon" | "biggest-prize" | "lowest-entry";
 }
 
-export function getTournaments(filters: TournamentFilters = {}): Tournament[] {
-  let list = [...tournaments] as Tournament[];
-
-  if (filters.mode && filters.mode !== "all") {
-    list = list.filter((t) => t.mode === filters.mode);
-  }
-  if (filters.entry === "free") {
-    list = list.filter((t) => t.entryFee === 0);
-  } else if (filters.entry === "paid") {
-    list = list.filter((t) => t.entryFee > 0);
-  }
-  if (filters.status && filters.status !== "all") {
-    list = list.filter((t) => t.status === filters.status);
-  }
-  if (filters.map && filters.map !== "all") {
-    list = list.filter((t) => t.map === filters.map);
-  }
+export async function getTournaments(filters: TournamentFilters = {}): Promise<Tournament[]> {
+  const supabase = await createClient();
+  let query = supabase.from("tournaments").select("*");
+  if (filters.mode && filters.mode !== "all") query = query.eq("mode", filters.mode);
+  if (filters.status && filters.status !== "all") query = query.eq("status", filters.status);
+  if (filters.map && filters.map !== "all") query = query.eq("map", filters.map);
+  if (filters.entry === "free") query = query.eq("entry_fee", 0);
+  if (filters.entry === "paid") query = query.gt("entry_fee", 0);
   if (filters.search?.trim()) {
-    const q = filters.search.trim().toLowerCase();
-    list = list.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.titleBn.includes(q) ||
-        t.mode.toLowerCase().includes(q) ||
-        t.map.toLowerCase().includes(q)
-    );
+    const q = filters.search.trim().replace(/[,%()]/g, " ");
+    query = query.or(`title.ilike.%${q}%,title_bn.ilike.%${q}%,mode.ilike.%${q}%,map.ilike.%${q}%`);
   }
-
   const sort = filters.sort ?? "starting-soon";
-  list.sort((a, b) => {
-    if (sort === "biggest-prize") return b.prizePool - a.prizePool;
-    if (sort === "lowest-entry") return a.entryFee - b.entryFee;
-    const order = { live: 0, upcoming: 1, ended: 2 } as const;
-    const oa = order[a.status];
-    const ob = order[b.status];
-    if (oa !== ob) return oa - ob;
-    return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
-  });
-
-  return list;
+  if (sort === "biggest-prize") query = query.order("prize_pool", { ascending: false });
+  else if (sort === "lowest-entry") query = query.order("entry_fee", { ascending: true });
+  else query = query.order("start_at", { ascending: true });
+  const { data, error } = await query;
+  if (error) throw new Error(`Unable to load tournaments: ${error.message}`);
+  return (data ?? []).map((row) => mapRowToTournament(row as TournamentRow));
 }
 
-export function getTournamentBySlug(slug: string): Tournament | undefined {
-  return (tournaments as Tournament[]).find((t) => t.slug === slug);
+export async function getTournamentBySlug(slug: string): Promise<Tournament | undefined> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("tournaments").select("*").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(`Unable to load tournament: ${error.message}`);
+  return data ? mapRowToTournament(data as TournamentRow) : undefined;
 }
 
-export function getRelatedTournaments(slug: string, limit = 3): Tournament[] {
-  const current = getTournamentBySlug(slug);
-  if (!current) return getTournaments({ status: "upcoming" }).slice(0, limit);
-  return getTournaments({ mode: current.mode, status: "upcoming" })
-    .filter((t) => t.slug !== slug)
-    .slice(0, limit);
-}
-
-export function getAllSlugs(): string[] {
-  return tournaments.map((t) => t.slug);
+export async function getRelatedTournaments(slug: string, limit = 3): Promise<Tournament[]> {
+  const current = await getTournamentBySlug(slug);
+  const supabase = await createClient();
+  let query = supabase.from("tournaments").select("*").eq("status", "upcoming").neq("slug", slug);
+  if (current) query = query.eq("mode", current.mode);
+  const { data, error } = await query.order("start_at", { ascending: true }).limit(limit);
+  if (error) throw new Error(`Unable to load related tournaments: ${error.message}`);
+  return (data ?? []).map((row) => mapRowToTournament(row as TournamentRow));
 }

@@ -15,7 +15,6 @@ import {
   Menu,
   X,
   ExternalLink,
-  LockKeyhole,
 } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { AdminLogoutButton } from "./AdminLogoutButton";
@@ -25,11 +24,11 @@ const primaryLinks = [
   { href: "/admin/tournaments", label: "Tournaments", icon: Trophy },
 ];
 
-const futureSections = [
-  { label: "Players & Registrations", icon: Users },
-  { label: "Payments", icon: CreditCard },
-  { label: "Matches & Results", icon: Swords },
-  { label: "Website Settings", icon: Settings2 },
+const managementLinks = [
+  { href: "/admin/registrations", label: "Players & Registrations", icon: Users },
+  { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/matches", label: "Matches & Results", icon: Swords },
+  { href: "/admin/settings", label: "Website Settings", icon: Settings2 },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -96,17 +95,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             Management
           </p>
           <div className="space-y-1">
-            {futureSections.map(({ label, icon: Icon }) => (
-              <div
-                key={label}
-                title="This module is not available yet"
-                className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-xl px-3 text-sm text-white/25"
-              >
-                <Icon className="h-[18px] w-[18px] text-white/20" />
+            {managementLinks.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return <Link key={href} href={href} onClick={() => setMobileOpen(false)}
+                className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all ${active ? "border border-[#FF5C00]/25 bg-[#FF5C00]/10 text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white"}`}>
+                <Icon className={`h-[18px] w-[18px] ${active ? "text-[#FF7130]" : "text-white/40 group-hover:text-white/80"}`} />
                 <span>{label}</span>
-                <LockKeyhole className="ml-auto h-3.5 w-3.5 text-white/20" />
-              </div>
-            ))}
+              </Link>;
+            })}
           </div>
         </div>
       </nav>

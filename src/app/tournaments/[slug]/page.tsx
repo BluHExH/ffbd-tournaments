@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTournamentBySlug, getAllSlugs, getRelatedTournaments } from "@/services/tournamentService";
+import { getTournamentBySlug, getRelatedTournaments } from "@/services/tournamentService";
 import TournamentDetailClient from "./TournamentDetailClient";
+
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const t = getTournamentBySlug(slug);
+  const t = await getTournamentBySlug(slug);
   if (!t) return { title: "Tournament not found" };
   return {
     title: `${t.title} | FFBD Tournaments`,
@@ -27,11 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TournamentDetailPage({ params }: Props) {
   const { slug } = await params;
-  const tournament = getTournamentBySlug(slug);
+  const [tournament, related] = await Promise.all([
+    getTournamentBySlug(slug),
+    getRelatedTournaments(slug, 3),
+  ]);
   if (!tournament) notFound();
-  const related = getRelatedTournaments(slug, 3);
-
-  return (
-    <TournamentDetailClient tournament={tournament} related={related} />
-  );
+  return <TournamentDetailClient tournament={tournament} related={related} />;
 }

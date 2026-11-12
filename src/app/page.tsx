@@ -14,26 +14,49 @@ import FAQAccordion from "@/components/FAQAccordion";
 import PrizeBadge from "@/components/PrizeBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useLanguage } from "@/context/LanguageContext";
-import { teams, winners, stats, sponsors } from "@/data/seed";
+import { sponsors } from "@/data/seed";
+import type { Team } from "@/types/tournament";
 import { createClient } from "@/lib/supabase/client";
 import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
 import { formatBDT, formatNumber } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 
+type HomepageStats = { key: string; prize_pool_paid: number; teams_registered: number; tournaments_held: number; prize_pool_label: string; teams_registered_label: string; tournaments_held_label: string; stats_section_title: string; teams_section_title: string; payouts_section_title: string };
+type HomepagePayout = { id: string; name: string; team: string | null; amount: number; tournament: string; date: string; method: string };
+
 export default function HomePage() {
   const { t, lang } = useLanguage();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [homepageStats, setHomepageStats] = useState<HomepageStats | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [winners, setWinners] = useState<HomepagePayout[]>([]);
 
   useEffect(() => {
     let active = true;
     const supabase = createClient();
-    supabase.from("tournaments").select("*").order("start_at", { ascending: true }).then(({ data }) => {
-      if (active) setTournaments((data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
+    Promise.all([
+      supabase.from("tournaments").select("*").order("start_at", { ascending: true }),
+      supabase.from("homepage_stats").select("*").eq("key", "main").maybeSingle(),
+      supabase.from("homepage_teams").select("*").order("rank", { ascending: true }),
+      supabase.from("homepage_payouts").select("*").order("date", { ascending: false }),
+    ]).then(([tournamentResult, statsResult, teamsResult, payoutsResult]) => {
+      if (!active) return;
+      setTournaments((tournamentResult.data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
+      setHomepageStats(statsResult.data as HomepageStats | null);
+      setTeams((teamsResult.data ?? []) as Team[]);
+      setWinners((payoutsResult.data ?? []) as HomepagePayout[]);
+      if (tournamentResult.error) console.error("Homepage tournaments load failed:", tournamentResult.error.message);
+      if (statsResult.error) console.error("Homepage stats load failed:", statsResult.error.message);
+      if (teamsResult.error) console.error("Homepage teams load failed:", teamsResult.error.message);
+      if (payoutsResult.error) console.error("Homepage payouts load failed:", payoutsResult.error.message);
     });
     return () => { active = false; };
   }, []);
 
-  const liveUpcoming = tournaments.filter((x) => x.status !== "ended").slice(0, 6);
+  const liveUpcoming = tournaments.filter((x) => x.status !== "ended");
+  const prizePoolPaid = Number(homepageStats?.prize_pool_paid ?? 0);
+  const teamsRegistered = Number(homepageStats?.teams_registered ?? 0);
+  const tournamentsHeld = Number(homepageStats?.tournaments_held ?? 0);
   const featured = tournaments.find((x) => x.slug === "weekend-grand-squad") || tournaments[0];
 
   return (
@@ -66,16 +89,16 @@ export default function HomePage() {
               </div>
               <div className="mt-12 flex flex-wrap justify-center gap-3">
                 <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
-                  <span className="text-[#FF5C00] font-bold">{formatBDT(stats.prizePoolPaid)}</span>
-                  <span className="text-white/60 text-xs">{t("hero.stat1")}</span>
+                  <span className="text-[#FF5C00] font-bold">{formatBDT(prizePoolPaid)}</span>
+                  <span className="text-white/60 text-xs">{homepageStats?.prize_pool_label || t("hero.stat1")}</span>
                 </div>
                 <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
-                  <span className="text-emerald-400 font-bold">{formatNumber(stats.teamsRegistered)}+</span>
-                  <span className="text-white/60 text-xs">{t("hero.stat2")}</span>
+                  <span className="text-emerald-400 font-bold">{formatNumber(teamsRegistered)}+</span>
+                  <span className="text-white/60 text-xs">{homepageStats?.teams_registered_label || t("hero.stat2")}</span>
                 </div>
                 <div className="stat-chip text-white flex items-center gap-2 shadow-lg">
-                  <span className="text-sky-400 font-bold">{stats.tournamentsHeld}+</span>
-                  <span className="text-white/60 text-xs">{t("hero.stat3")}</span>
+                  <span className="text-sky-400 font-bold">{tournamentsHeld}+</span>
+                  <span className="text-white/60 text-xs">{homepageStats?.tournaments_held_label || t("hero.stat3")}</span>
                 </div>
               </div>
             </div>
@@ -92,12 +115,15 @@ export default function HomePage() {
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar snap-x snap-mandatory">
-              {liveUpcoming.map((tour) => (
-                <div key={tour.id} className="snap-start">
-                  <TournamentCard tournament={tour} />
+            <div className="live-marquee -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="All live and upcoming tournaments">
+              {liveUpcoming.length > 0 && <div className="live-marquee-track">
+                <div className="live-marquee-group">
+                  {liveUpcoming.map((tour) => <div key={tour.id} className="shrink-0"><TournamentCard tournament={tour} /></div>)}
                 </div>
-              ))}
+                <div className="live-marquee-group" aria-hidden="true">
+                  {liveUpcoming.map((tour) => <div key={`duplicate-${tour.id}`} className="shrink-0"><TournamentCard tournament={tour} /></div>)}
+                </div>
+              </div>}
             </div>
           </div>
         </section>
@@ -131,11 +157,11 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[linear-gradient(160deg,#0B1221_0%,#121C2E_50%,#0B1221_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.12),transparent_60%)]" />
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={t("stats.title")} light />
+            <SectionHeading title={homepageStats?.stats_section_title || t("stats.title")} light />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-16">
-              <StatCounter value={stats.prizePoolPaid} label={t("hero.stat1")} suffix="+" />
-              <StatCounter value={stats.teamsRegistered} label={t("hero.stat2")} suffix="+" />
-              <StatCounter value={stats.tournamentsHeld} label={t("hero.stat3")} suffix="+" />
+              <StatCounter value={prizePoolPaid} label={homepageStats?.prize_pool_label || t("hero.stat1")} suffix="+" />
+              <StatCounter value={teamsRegistered} label={homepageStats?.teams_registered_label || t("hero.stat2")} suffix="+" />
+              <StatCounter value={tournamentsHeld} label={homepageStats?.tournaments_held_label || t("hero.stat3")} suffix="+" />
             </div>
           </div>
         </section>
@@ -143,7 +169,7 @@ export default function HomePage() {
         {/* Teams */}
         <section id="winners" className="section-white py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={t("teams.title")} />
+            <SectionHeading title={homepageStats?.teams_section_title || t("teams.title")} />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
               {teams.map((team) => (
                 <TeamCard key={team.id} team={team} />
@@ -179,10 +205,10 @@ export default function HomePage() {
         {/* Payouts */}
         <section className="section-light py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={t("payout.title")} />
+            <SectionHeading title={homepageStats?.payouts_section_title || t("payout.title")} />
             <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-              {[...winners, ...winners].map((w, i) => (
-                <div key={`${w.id}-${i}`} className="card-light shrink-0 min-w-[240px] p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+              {winners.map((w) => (
+                <div key={w.id} className="card-light shrink-0 min-w-[240px] p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {w.name.charAt(0)}
                   </div>

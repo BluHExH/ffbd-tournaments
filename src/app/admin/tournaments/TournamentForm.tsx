@@ -247,10 +247,10 @@ export function TournamentForm({
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Entry Fee (BDT)">
-            <input type="number" min={0} step={1} value={form.entryFee} onChange={(e) => update("entryFee", Number(e.target.value))} className={inputCls} />
+            <input type="number" min={0} step={1} value={form.entryFee === 0 ? "" : form.entryFee} onChange={(e) => update("entryFee", e.target.value === "" ? 0 : Number(e.target.value))} className={inputCls} />
           </Field>
           <Field label="Prize Pool (BDT)">
-            <input type="number" min={0} step={1} value={form.prizePool} onChange={(e) => update("prizePool", Number(e.target.value))} className={inputCls} />
+            <input type="number" min={0} step={1} value={form.prizePool === 0 ? "" : form.prizePool} onChange={(e) => update("prizePool", e.target.value === "" ? 0 : Number(e.target.value))} className={inputCls} />
           </Field>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -258,7 +258,7 @@ export function TournamentForm({
             <input type="number" min={1} value={form.slots} onChange={(e) => update("slots", Number(e.target.value))} className={inputCls} />
           </Field>
           <Field label="Slots Filled">
-            <input type="number" min={0} value={form.slotsFilled} onChange={(e) => update("slotsFilled", Number(e.target.value))} className={inputCls} />
+            <input type="number" min={0} value={form.slotsFilled === 0 ? "" : form.slotsFilled} onChange={(e) => update("slotsFilled", e.target.value === "" ? 0 : Number(e.target.value))} className={inputCls} />
           </Field>
         </div>
         <Field label="Start Date and Time" required>

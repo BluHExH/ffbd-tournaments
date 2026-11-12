@@ -8,6 +8,7 @@ export default async function HomepageTeamsPage() {
     description="Add, edit, reorder or remove the teams shown on the public homepage. Lower rank numbers appear first."
     table="homepage_teams"
     orderBy="rank"
+    orderAscending
     fields={[
       { key: "name", label: "Team Name", required: true },
       { key: "logo", label: "Logo URL" },

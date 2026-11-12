@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { TournamentForm } from "../../TournamentForm";
 import {
   mapRowToTournament,
@@ -64,6 +64,7 @@ export default async function EditTournamentPage({
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div className="mb-5"><Link href={`/admin/tournaments/${id}/content`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#FF5C00]/25 bg-[#FF5C00]/10 px-4 text-sm font-semibold text-[#FF9A66] hover:bg-[#FF5C00]/15"><FileText className="h-4 w-4"/> Edit Rules, Players Display, Schedule & Prizes</Link></div>
         <TournamentForm
           mode="edit"
           initial={{

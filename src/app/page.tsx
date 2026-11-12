@@ -81,7 +81,7 @@ export default function HomePage() {
             <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar snap-x snap-mandatory">
               {liveUpcoming.map((tour) => (
                 <div key={tour.id} className="snap-start">
-                  <TournamentCard tournament={tour as any} />
+                  <TournamentCard tournament={tour} />
                 </div>
               ))}
             </div>

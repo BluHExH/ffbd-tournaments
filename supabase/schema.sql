@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION public.check_admin_limit()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 BEGIN
   PERFORM pg_advisory_xact_lock(870031); -- serialize concurrent inserts

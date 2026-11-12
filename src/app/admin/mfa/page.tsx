@@ -7,7 +7,7 @@ import { Shield, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function MfaEnrollPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState<string | null>(null);
@@ -22,10 +22,12 @@ export default function MfaEnrollPage() {
     let cancelled = false;
 
     async function init() {
+      const client = createClient();
+      setSupabase(client);
       const {
         data: { user },
         error: userError,
-      } = await supabase.auth.getUser();
+      } = await client.auth.getUser();
 
       if (userError || !user) {
         router.replace("/admin/login");
@@ -39,13 +41,13 @@ export default function MfaEnrollPage() {
         .maybeSingle();
 
       if (adminError || !admin) {
-        await supabase.auth.signOut();
+        await client.auth.signOut();
         router.replace("/admin/login");
         return;
       }
 
       const { data: aal, error: aalError } =
-        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        await client.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aalError) {
         if (!cancelled) {
           setError(aalError.message);
@@ -59,7 +61,7 @@ export default function MfaEnrollPage() {
       }
 
       const { data: factors, error: factorsError } =
-        await supabase.auth.mfa.listFactors();
+        await client.auth.mfa.listFactors();
 
       if (factorsError) {
         if (!cancelled) {
@@ -82,7 +84,7 @@ export default function MfaEnrollPage() {
         (f) => f.status !== "verified"
       );
       for (const f of unverified) {
-        const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+        const { error: unenrollError } = await client.auth.mfa.unenroll({
           factorId: f.id,
         });
         if (unenrollError) {
@@ -94,7 +96,7 @@ export default function MfaEnrollPage() {
         }
       }
 
-      const { data, error: enrollError } = await supabase.auth.mfa.enroll({
+      const { data, error: enrollError } = await client.auth.mfa.enroll({
         factorType: "totp",
         friendlyName: "FFBD Admin",
       });
@@ -134,10 +136,14 @@ export default function MfaEnrollPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, supabase.auth]);
+  }, [router]);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) {
+      setError("Supabase is not configured. Add the public Supabase URL and anon key, then rebuild.");
+      return;
+    }
     if (!factorId) {
       setError("No enrollment in progress. Refresh the page.");
       return;

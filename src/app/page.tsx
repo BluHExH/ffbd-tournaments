@@ -14,7 +14,7 @@ import FAQAccordion from "@/components/FAQAccordion";
 import PrizeBadge from "@/components/PrizeBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useLanguage } from "@/context/LanguageContext";
-import { sponsors } from "@/data/seed";
+import { sponsors, teams as seedTeams, winners as seedWinners, stats as seedStats } from "@/data/seed";
 import type { Team } from "@/types/tournament";
 import { createClient } from "@/lib/supabase/client";
 import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
@@ -28,8 +28,8 @@ export default function HomePage() {
   const { t, lang } = useLanguage();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [homepageStats, setHomepageStats] = useState<HomepageStats | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [winners, setWinners] = useState<HomepagePayout[]>([]);
+  const [teams, setTeams] = useState<Team[]>(seedTeams);
+  const [winners, setWinners] = useState<HomepagePayout[]>(seedWinners.map((winner) => ({ ...winner, team: winner.team ?? null })));
 
   useEffect(() => {
     let active = true;
@@ -42,9 +42,9 @@ export default function HomePage() {
     ]).then(([tournamentResult, statsResult, teamsResult, payoutsResult]) => {
       if (!active) return;
       setTournaments((tournamentResult.data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
-      setHomepageStats(statsResult.data as HomepageStats | null);
-      setTeams((teamsResult.data ?? []) as Team[]);
-      setWinners((payoutsResult.data ?? []) as HomepagePayout[]);
+      if (!statsResult.error && statsResult.data) setHomepageStats(statsResult.data as HomepageStats);
+      if (!teamsResult.error) setTeams((teamsResult.data ?? []) as Team[]);
+      if (!payoutsResult.error) setWinners((payoutsResult.data ?? []) as HomepagePayout[]);
       if (tournamentResult.error) console.error("Homepage tournaments load failed:", tournamentResult.error.message);
       if (statsResult.error) console.error("Homepage stats load failed:", statsResult.error.message);
       if (teamsResult.error) console.error("Homepage teams load failed:", teamsResult.error.message);
@@ -54,9 +54,9 @@ export default function HomePage() {
   }, []);
 
   const liveUpcoming = tournaments.filter((x) => x.status !== "ended");
-  const prizePoolPaid = Number(homepageStats?.prize_pool_paid ?? 0);
-  const teamsRegistered = Number(homepageStats?.teams_registered ?? 0);
-  const tournamentsHeld = Number(homepageStats?.tournaments_held ?? 0);
+  const prizePoolPaid = Number(homepageStats?.prize_pool_paid ?? seedStats.prizePoolPaid);
+  const teamsRegistered = Number(homepageStats?.teams_registered ?? seedStats.teamsRegistered);
+  const tournamentsHeld = Number(homepageStats?.tournaments_held ?? seedStats.tournamentsHeld);
   const featured = tournaments.find((x) => x.slug === "weekend-grand-squad") || tournaments[0];
 
   return (

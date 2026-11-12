@@ -29,6 +29,9 @@ const managementLinks = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/matches", label: "Matches & Results", icon: Swords },
   { href: "/admin/settings", label: "Website Settings", icon: Settings2 },
+  { href: "/admin/homepage-stats", label: "Homepage Stats", icon: Settings2 },
+  { href: "/admin/homepage-teams", label: "Homepage Teams", icon: Trophy },
+  { href: "/admin/homepage-payouts", label: "Homepage Payouts", icon: CreditCard },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

@@ -9,6 +9,8 @@ export default async function HomepageStatsPage() {
     table="homepage_stats"
     primaryKey="key"
     orderBy="key"
+    allowCreate={false}
+    allowDelete={false}
     fields={[
       { key: "key", label: "Record Key (keep main)", required: true },
       { key: "prize_pool_paid", label: "Prize Pool Paid (BDT)", type: "number", required: true },

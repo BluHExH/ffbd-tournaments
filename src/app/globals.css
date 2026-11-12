@@ -183,3 +183,37 @@ body {
   font-size: 0.75rem;
   letter-spacing: 0.02em;
 }
+
+
+/* Seamless homepage tournament ticker. The second track copy makes the loop continuous. */
+.live-marquee {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
+}
+.live-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: live-marquee-scroll 55s linear infinite;
+  will-change: transform;
+}
+.live-marquee-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+.live-marquee:hover .live-marquee-track,
+.live-marquee:focus-within .live-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes live-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-marquee { overflow-x: auto; }
+  .live-marquee-track { animation: none; }
+}

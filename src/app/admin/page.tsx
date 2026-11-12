@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import {
-  Trophy,
+  Activity,
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  Clock3,
   Plus,
-  LayoutDashboard,
-  Calendar,
+  ShieldCheck,
+  Trophy,
   Users,
-  Shield,
 } from "lucide-react";
-import { AdminLogoutButton } from "./AdminLogoutButton";
+import { createClient } from "@/lib/supabase/server";
 import { formatBDT } from "@/lib/utils";
 import { requireAdmin } from "@/lib/admin/auth";
 
@@ -16,167 +18,170 @@ export default async function AdminDashboardPage() {
   const admin = await requireAdmin();
   const supabase = await createClient();
 
-  const { count: totalTournaments } = await supabase
-    .from("tournaments")
-    .select("*", { count: "exact", head: true });
+  const [
+    totalResult,
+    liveResult,
+    upcomingResult,
+    prizeResult,
+    recentResult,
+  ] = await Promise.all([
+    supabase.from("tournaments").select("*", { count: "exact", head: true }),
+    supabase.from("tournaments").select("*", { count: "exact", head: true }).eq("status", "live"),
+    supabase.from("tournaments").select("*", { count: "exact", head: true }).eq("status", "upcoming"),
+    supabase.from("tournaments").select("prize_pool"),
+    supabase.from("tournaments")
+      .select("id, uid, title, status, prize_pool, start_at, mode, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+  ]);
 
-  const { count: liveCount } = await supabase
-    .from("tournaments")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "live");
-
-  const { count: upcomingCount } = await supabase
-    .from("tournaments")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "upcoming");
-
-  const { data: prizeData } = await supabase
-    .from("tournaments")
-    .select("prize_pool");
-
-  const totalPrize =
-    prizeData?.reduce((sum, t) => sum + (t.prize_pool || 0), 0) || 0;
-
-  const { data: recent } = await supabase
-    .from("tournaments")
-    .select("id, uid, title, status, prize_pool, start_at, mode")
-    .order("created_at", { ascending: false })
-    .limit(8);
+  const totalPrize = prizeResult.data?.reduce((sum, item) => sum + (item.prize_pool || 0), 0) ?? 0;
+  const recent = recentResult.data ?? [];
+  const stats = [
+    { label: "Total tournaments", value: String(totalResult.count ?? 0), icon: Trophy, detail: "All records" },
+    { label: "Live tournaments", value: String(liveResult.count ?? 0), icon: Activity, detail: "Currently running", live: true },
+    { label: "Upcoming", value: String(upcomingResult.count ?? 0), icon: CalendarDays, detail: "Scheduled events" },
+    { label: "Total prize pool", value: formatBDT(totalPrize), icon: Users, detail: "Across all tournaments" },
+  ];
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#0B1221]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#FF5C00]/15 border border-[#FF5C00]/30 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-[#FF5C00]" />
+    <main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 xl:px-9">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF7130]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C00]" />
+            Control center / Overview
+          </div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">Dashboard overview</h1>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-white/45">
+            Welcome back{admin.email ? `, ${admin.email}` : ""}. Here’s what’s happening across BANGLAR TOURNAMENTS.
+          </p>
+        </div>
+        <Link
+          href="/admin/tournaments/new"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] px-5 text-sm font-bold text-white shadow-[0_8px_28px_rgba(255,92,0,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_32px_rgba(255,92,0,0.3)]"
+        >
+          <Plus className="h-4 w-4" />
+          Create tournament
+        </Link>
+      </div>
+
+      <section aria-label="Tournament statistics" className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, detail, live }) => (
+          <div key={label} className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121C2E] p-5 shadow-[0_12px_36px_rgba(0,0,0,0.12)]">
+            <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full bg-[#FF5C00]/[0.06] blur-2xl" />
+            <div className="relative flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-white/45">{label}</p>
+                <p className={`mt-3 font-heading text-3xl font-bold tracking-tight ${live ? "text-red-400" : "text-white"}`}>{value}</p>
+                <p className="mt-1.5 text-[11px] text-white/30">{detail}</p>
+              </div>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${live ? "border-red-400/20 bg-red-400/10 text-red-400" : "border-[#FF5C00]/20 bg-[#FF5C00]/10 text-[#FF7130]"}`}>
+                <Icon className="h-[18px] w-[18px]" />
+              </div>
             </div>
-            <span className="font-heading font-bold text-sm tracking-wide">
-              Admin Panel
-            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs text-white/40">
-              {admin.email}
-            </span>
-            <AdminLogoutButton />
-          </div>
-        </div>
-      </header>
+        ))}
+      </section>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm text-white/45 mt-0.5">Manage tournaments and settings</p>
-          </div>
-          <Link
-            href="/admin/tournaments/new"
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] text-white text-sm font-heading font-semibold hover:opacity-95 active:scale-[0.98] transition"
-          >
-            <Plus className="w-4 h-4" />
-            New Tournament
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-          <StatCard icon={<Trophy className="w-4 h-4" />} label="Total Tournaments" value={String(totalTournaments ?? 0)} />
-          <StatCard icon={<Calendar className="w-4 h-4" />} label="Live Now" value={String(liveCount ?? 0)} accent="live" />
-          <StatCard icon={<Users className="w-4 h-4" />} label="Upcoming" value={String(upcomingCount ?? 0)} />
-          <StatCard icon={<LayoutDashboard className="w-4 h-4" />} label="Total Prize Pool" value={formatBDT(totalPrize)} />
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-3 mb-8">
-          <Link href="/admin/tournaments" className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-[#FF5C00]/40 hover:bg-white/[0.05] transition group">
-            <div className="w-10 h-10 rounded-lg bg-[#FF5C00]/10 border border-[#FF5C00]/20 flex items-center justify-center group-hover:bg-[#FF5C00]/20 transition">
-              <Trophy className="w-5 h-5 text-[#FF5C00]" />
-            </div>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,0.75fr)]">
+        <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121C2E]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4 sm:px-6">
             <div>
-              <p className="font-heading font-semibold text-sm">All Tournaments</p>
-              <p className="text-xs text-white/40">View, edit and manage cards</p>
+              <h2 className="font-heading text-lg font-bold text-white">Recent tournaments</h2>
+              <p className="mt-0.5 text-xs text-white/35">Latest tournament records from your database</p>
             </div>
-          </Link>
-          <Link href="/admin/tournaments/new" className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/8 hover:border-[#FF5C00]/40 hover:bg-white/[0.05] transition group">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition">
-              <Plus className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <p className="font-heading font-semibold text-sm">Create Tournament</p>
-              <p className="text-xs text-white/40">Add a new tournament card</p>
-            </div>
-          </Link>
-        </div>
-
-        <div className="rounded-xl border border-white/8 overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/8 bg-white/[0.02]">
-            <h2 className="font-heading font-semibold text-sm">Recent Tournaments</h2>
+            <Link href="/admin/tournaments" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF7130] transition hover:text-[#FF9A66]">
+              View all <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
-          {!recent || recent.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-white/40">
-              No tournaments yet.{" "}
-              <Link href="/admin/tournaments/new" className="text-[#FF5C00] hover:underline">
-                Create the first one
-              </Link>
+
+          {recent.length === 0 ? (
+            <div className="flex flex-col items-center px-5 py-14 text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#FF5C00]/20 bg-[#FF5C00]/10 text-[#FF7130]">
+                <Trophy className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-semibold text-white/80">No tournaments yet</p>
+              <p className="mt-1 text-xs text-white/35">Create your first tournament to get started.</p>
+              <Link href="/admin/tournaments/new" className="mt-4 text-xs font-semibold text-[#FF7130] hover:text-[#FF9A66]">Create tournament <ArrowRight className="ml-1 inline h-3 w-3" /></Link>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
-              {recent.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/admin/tournaments/${t.id}/edit`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-mono text-white/35 shrink-0">{t.uid}</span>
-                    <span className="text-sm font-medium truncate">{t.title}</span>
-                    <StatusBadge status={t.status} />
+            <div className="divide-y divide-white/[0.06]">
+              {recent.map((tournament) => (
+                <Link key={tournament.id} href={`/admin/tournaments/${tournament.id}/edit`} className="group flex flex-col gap-3 px-5 py-4 transition hover:bg-white/[0.025] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.035] text-[#FF7130]">
+                      <Trophy className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-mono text-white/30">{tournament.uid}</span>
+                        <StatusBadge status={tournament.status} />
+                      </div>
+                      <p className="mt-1 truncate text-sm font-semibold text-white/85 transition group-hover:text-white">{tournament.title}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 shrink-0 text-xs text-white/40">
-                    <span className="hidden sm:inline">{t.mode}</span>
-                    <span>{formatBDT(t.prize_pool)}</span>
+                  <div className="flex items-center justify-between gap-4 pl-[52px] text-xs sm:pl-0">
+                    <span className="text-white/35">{tournament.mode}</span>
+                    <span className="font-semibold text-white/65">{formatBDT(tournament.prize_pool)}</span>
+                    <ArrowUpRight className="h-4 w-4 text-white/20 transition group-hover:text-[#FF7130]" />
                   </div>
                 </Link>
               ))}
             </div>
           )}
-        </div>
-      </main>
-    </div>
+        </section>
+
+        <aside className="space-y-5">
+          <section className="rounded-2xl border border-[#FF5C00]/20 bg-[radial-gradient(ellipse_at_top_right,rgba(255,92,0,0.13),transparent_55%),#121C2E] p-5 sm:p-6">
+            <div className="flex items-center gap-2 text-[#FF7130]">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em]">Security status</span>
+            </div>
+            <h2 className="mt-4 font-heading text-xl font-bold text-white">Your admin session is protected</h2>
+            <p className="mt-2 text-xs leading-5 text-white/45">Admin pages require an authorized account and an elevated MFA session.</p>
+            <div className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-2.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-300">Authenticated session</span>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-white/[0.08] bg-[#121C2E] p-5 sm:p-6">
+            <div className="flex items-center gap-2">
+              <Clock3 className="h-4 w-4 text-[#FF7130]" />
+              <h2 className="font-heading text-base font-bold text-white">Quick actions</h2>
+            </div>
+            <div className="mt-4 space-y-2">
+              <QuickAction href="/admin/tournaments" title="Manage tournaments" description="Edit, review or remove events" />
+              <QuickAction href="/admin/tournaments/new" title="Create a tournament" description="Set up a new competition" />
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  accent?: "live";
-}) {
+function QuickAction({ href, title, description }: { href: string; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
-      <div className="flex items-center gap-2 text-white/40 mb-2">
-        {icon}
-        <span className="text-xs">{label}</span>
-      </div>
-      <p className={`font-heading text-xl font-bold tracking-tight ${accent === "live" ? "text-red-400" : "text-white"}`}>
-        {value}
-      </p>
-    </div>
+    <Link href={href} className="group flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 transition hover:border-[#FF5C00]/25 hover:bg-[#FF5C00]/[0.04]">
+      <span>
+        <span className="block text-xs font-semibold text-white/80 group-hover:text-white">{title}</span>
+        <span className="mt-1 block text-[10px] text-white/35">{description}</span>
+      </span>
+      <ArrowRight className="h-4 w-4 text-white/25 transition group-hover:translate-x-0.5 group-hover:text-[#FF7130]" />
+    </Link>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    live: "bg-red-500/15 text-red-400 border-red-500/25",
-    upcoming: "bg-sky-500/15 text-sky-400 border-sky-500/25",
-    ended: "bg-white/5 text-white/40 border-white/10",
+    live: "border-red-400/20 bg-red-400/10 text-red-300",
+    upcoming: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    ended: "border-white/10 bg-white/[0.04] text-white/40",
   };
   return (
-    <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${styles[status] || styles.ended}`}>
+    <span className={`rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${styles[status] || styles.ended}`}>
       {status}
     </span>
   );

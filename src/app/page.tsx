@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { UserPlus, CreditCard, KeyRound, Trophy, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -13,14 +14,27 @@ import FAQAccordion from "@/components/FAQAccordion";
 import PrizeBadge from "@/components/PrizeBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useLanguage } from "@/context/LanguageContext";
-import { tournaments, teams, winners, stats, sponsors } from "@/data/seed";
+import { teams, winners, stats, sponsors } from "@/data/seed";
+import { createClient } from "@/lib/supabase/client";
+import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
 import { formatBDT, formatNumber } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 
 export default function HomePage() {
   const { t, lang } = useLanguage();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    supabase.from("tournaments").select("*").order("start_at", { ascending: true }).then(({ data }) => {
+      if (active) setTournaments((data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
+    });
+    return () => { active = false; };
+  }, []);
+
   const liveUpcoming = tournaments.filter((x) => x.status !== "ended").slice(0, 6);
-  const featured = tournaments.find((x) => x.slug === "weekend-grand-squad") || tournaments[1];
+  const featured = tournaments.find((x) => x.slug === "weekend-grand-squad") || tournaments[0];
 
   return (
     <>
@@ -139,7 +153,7 @@ export default function HomePage() {
         </section>
 
         {/* Featured tournament banner */}
-        <section className="relative py-16 md:py-20 overflow-hidden">
+        {featured && <section className="relative py-16 md:py-20 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={BRAND.cover} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden />
           <div className="absolute inset-0 bg-[#0B1221]/80" />
@@ -160,7 +174,7 @@ export default function HomePage() {
               {t("common.register")}
             </Link>
           </div>
-        </section>
+        </section>}
 
         {/* Payouts */}
         <section className="section-light py-16 md:py-20">

@@ -44,31 +44,25 @@ export async function resolveAdminAuthState(): Promise<AdminAuthState> {
     return { state: "unauthenticated" };
   }
 
-  const { data: admin, error: adminError } = await supabase
-    .from("admins")
-    .select("id, email")
-    .eq("id", user.id)
-    .maybeSingle();
+  // These independent checks can run concurrently after getUser().
+  const [adminResult, aalResult] = await Promise.all([
+    supabase.from("admins").select("id, email").eq("id", user.id).maybeSingle(),
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+  ]);
 
-  if (adminError || !admin) {
+  if (adminResult.error || !adminResult.data) {
     return { state: "not_admin" };
   }
 
-  const email = admin.email ?? user.email ?? undefined;
-
-  const { data: aal, error: aalError } =
-    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const email = adminResult.data.email ?? user.email ?? undefined;
+  const { data: aal, error: aalError } = aalResult;
 
   if (aalError || !aal) {
     return { state: "mfa_verification_required", userId: user.id, email };
   }
 
   if (aal.currentLevel === "aal2") {
-    return {
-      state: "fully_authenticated_aal2",
-      userId: user.id,
-      email,
-    };
+    return { state: "fully_authenticated_aal2", userId: user.id, email };
   }
 
   const { data: factors, error: factorsError } =

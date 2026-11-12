@@ -75,19 +75,19 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="/#how" className="hover:text-[#FF5C00] transition-colors">
+                <Link href="/#how" className="hover:text-[#FF5C00] transition-colors">
                   {t("nav.how")}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#winners" className="hover:text-[#FF5C00] transition-colors">
+                <Link href="/#winners" className="hover:text-[#FF5C00] transition-colors">
                   {t("nav.winners")}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#faq" className="hover:text-[#FF5C00] transition-colors">
+                <Link href="/#faq" className="hover:text-[#FF5C00] transition-colors">
                   {t("nav.faq")}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

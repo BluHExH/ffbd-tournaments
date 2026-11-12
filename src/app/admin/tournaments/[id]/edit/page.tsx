@@ -27,11 +27,19 @@ export default async function EditTournamentPage({
 
   if (error || !row) notFound();
 
-  const { data: creds } = await supabase
+  const { data: creds, error: credentialsError } = await supabase
     .from("tournament_room_credentials")
     .select("*")
     .eq("tournament_id", id)
     .maybeSingle();
+
+  // Never treat a failed credentials read as "no credentials": doing so could
+  // cause an admin to overwrite existing room details with empty values.
+  if (credentialsError) {
+    throw new Error(
+      `Unable to load tournament room credentials: ${credentialsError.message}`
+    );
+  }
 
   const t = mapRowToTournament(
     row as TournamentRow,

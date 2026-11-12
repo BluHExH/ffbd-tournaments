@@ -101,16 +101,21 @@ export function TournamentForm({
     if (!form.uid.trim() || !form.slug.trim() || !form.title.trim() || !form.titleBn.trim()) {
       return "UID, slug, and titles are required.";
     }
-    if (form.entryFee < 0 || form.prizePool < 0) {
-      return "Entry fee and prize pool cannot be negative.";
+    if (
+      !Number.isFinite(form.entryFee) ||
+      !Number.isFinite(form.prizePool) ||
+      form.entryFee < 0 ||
+      form.prizePool < 0
+    ) {
+      return "Entry fee and prize pool must be valid non-negative numbers.";
     }
-    if (form.slots < 1) {
+    if (!Number.isInteger(form.slots) || form.slots < 1) {
       return "Slots must be at least 1.";
     }
-    if (form.slotsFilled < 0 || form.slotsFilled > form.slots) {
+    if (!Number.isInteger(form.slotsFilled) || form.slotsFilled < 0 || form.slotsFilled > form.slots) {
       return "Slots filled must be between 0 and total slots.";
     }
-    if (Number.isNaN(new Date(form.startAt).getTime())) {
+    if (!form.startAt || Number.isNaN(new Date(form.startAt).getTime())) {
       return "Invalid start date/time.";
     }
     return null;
@@ -257,7 +262,15 @@ export function TournamentForm({
           </Field>
         </div>
         <Field label="Start Date and Time" required>
-          <input type="datetime-local" required value={toLocalDatetimeValue(form.startAt)} onChange={(e) => update("startAt", new Date(e.target.value).toISOString())} className={inputCls} />
+          <input type="datetime-local" required value={toLocalDatetimeValue(form.startAt)} onChange={(e) => {
+              const value = e.target.value;
+              update(
+                "startAt",
+                value && !Number.isNaN(new Date(value).getTime())
+                  ? new Date(value).toISOString()
+                  : ""
+              );
+            }} className={inputCls} />
         </Field>
       </Section>
 

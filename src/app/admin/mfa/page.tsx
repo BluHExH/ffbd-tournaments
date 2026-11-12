@@ -32,8 +32,27 @@ export default function MfaEnrollPage() {
         return;
       }
 
-      const { data: aal } =
+      const { data: admin, error: adminError } = await supabase
+        .from("admins")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (adminError || !admin) {
+        await supabase.auth.signOut();
+        router.replace("/admin/login");
+        return;
+      }
+
+      const { data: aal, error: aalError } =
         await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalError) {
+        if (!cancelled) {
+          setError(aalError.message);
+          setLoading(false);
+        }
+        return;
+      }
       if (aal?.currentLevel === "aal2") {
         router.replace("/admin");
         return;
@@ -63,7 +82,16 @@ export default function MfaEnrollPage() {
         (f) => f.status !== "verified"
       );
       for (const f of unverified) {
-        await supabase.auth.mfa.unenroll({ factorId: f.id });
+        const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+          factorId: f.id,
+        });
+        if (unenrollError) {
+          if (!cancelled) {
+            setError(`Unable to clear an incomplete authenticator: ${unenrollError.message}`);
+            setLoading(false);
+          }
+          return;
+        }
       }
 
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
@@ -95,7 +123,14 @@ export default function MfaEnrollPage() {
       }
     }
 
-    init();
+    init().catch((cause: unknown) => {
+      if (!cancelled) {
+        setError(
+          cause instanceof Error ? cause.message : "Unable to initialize MFA enrollment."
+        );
+        setLoading(false);
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -111,6 +146,7 @@ export default function MfaEnrollPage() {
     setVerifying(true);
     setError(null);
 
+    try {
     const { data: challenge, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId });
 
@@ -151,7 +187,13 @@ export default function MfaEnrollPage() {
     }
 
     setDone(true);
-    setVerifying(false);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Verification failed. Please try again."
+      );
+    } finally {
+      setVerifying(false);
+    }
   }
 
   if (loading) {

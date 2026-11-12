@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Users, Swords, MapPin } from "lucide-react";
-import type { Tournament } from "@/types/tournament";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatBDT, cn } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
@@ -10,8 +9,25 @@ import LiveBadge from "./LiveBadge";
 import PrizeBadge from "./PrizeBadge";
 import CountdownTimer from "./CountdownTimer";
 
+type TournamentCardData = {
+  id: string;
+  uid?: string;
+  slug: string;
+  title: string;
+  titleBn?: string;
+  mode: string;
+  entryFee: number;
+  prizePool: number;
+  slots: number;
+  slotsFilled: number;
+  status: string;
+  startAt: string;
+  cover?: string;
+  map?: string;
+};
+
 interface Props {
-  tournament: Tournament & { uid?: string };
+  tournament: TournamentCardData;
   className?: string;
   fluid?: boolean;
 }

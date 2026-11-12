@@ -30,5 +30,17 @@ export default async function TournamentDetailPage({ params }: Props) {
     getRelatedTournaments(slug, 3),
   ]);
   if (!tournament) notFound();
-  return <TournamentDetailClient tournament={tournament} related={related} />;
+  const db = await (await import("@/lib/supabase/server")).createClient();
+  const [
+    { data: content },
+    { data: participants },
+    { data: results },
+    { data: matches },
+  ] = await Promise.all([
+    db.from("tournament_content").select("*").eq("tournament_id", tournament.id).maybeSingle(),
+    db.from("tournament_participants").select("id,display_name,team_name,game_uid,slot_number,status").eq("tournament_id", tournament.id).in("status", ["registered","confirmed"]).order("slot_number", { ascending: true }),
+    db.from("tournament_results").select("id,participant_name,team_name,rank,kills,points,prize_amount").eq("tournament_id", tournament.id).order("rank", { ascending: true }),
+    db.from("tournament_matches").select("id,match_number,map,start_at,status,notes").eq("tournament_id", tournament.id).order("match_number", { ascending: true }),
+  ]);
+  return <TournamentDetailClient tournament={tournament} related={related} content={content} participants={participants || []} results={results || []} matches={matches || []} />;
 }

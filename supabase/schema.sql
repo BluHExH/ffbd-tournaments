@@ -73,8 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_tournaments_slug ON public.tournaments(slug);
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 BEGIN
   NEW.updated_at = now();
@@ -112,7 +111,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.admins WHERE id = (SELECT auth.uid())
@@ -129,11 +128,24 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournament_room_credentials ENABLE ROW LEVEL SECURITY;
 
+-- Drop both legacy and current policy names so this schema can be
+-- safely re-applied without duplicate-policy errors.
 DROP POLICY IF EXISTS "Admins can read admins" ON public.admins;
+DROP POLICY IF EXISTS "admins_select_for_admins" ON public.admins;
+
 DROP POLICY IF EXISTS "Public can read tournaments" ON public.tournaments;
 DROP POLICY IF EXISTS "Admins can insert tournaments" ON public.tournaments;
 DROP POLICY IF EXISTS "Admins can update tournaments" ON public.tournaments;
 DROP POLICY IF EXISTS "Admins can delete tournaments" ON public.tournaments;
+DROP POLICY IF EXISTS "tournaments_select_public" ON public.tournaments;
+DROP POLICY IF EXISTS "tournaments_insert_admin" ON public.tournaments;
+DROP POLICY IF EXISTS "tournaments_update_admin" ON public.tournaments;
+DROP POLICY IF EXISTS "tournaments_delete_admin" ON public.tournaments;
+
+DROP POLICY IF EXISTS "room_credentials_select_admin" ON public.tournament_room_credentials;
+DROP POLICY IF EXISTS "room_credentials_insert_admin" ON public.tournament_room_credentials;
+DROP POLICY IF EXISTS "room_credentials_update_admin" ON public.tournament_room_credentials;
+DROP POLICY IF EXISTS "room_credentials_delete_admin" ON public.tournament_room_credentials;
 
 CREATE POLICY "admins_select_for_admins"
   ON public.admins FOR SELECT

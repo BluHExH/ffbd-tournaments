@@ -46,6 +46,10 @@ type AnyTournament = {
   map?: string;
   cover?: string;
 };
+type DetailContent = { rules?: unknown; banned_items?: unknown; penalties?: unknown; placement_points?: unknown; prizes?: unknown; schedule?: unknown; organizer_note?: string | null; matches_description?: string | null };
+type Participant = { id: string; display_name: string; team_name?: string | null; game_uid?: string | null; slot_number?: number | null; status: string };
+type ResultRow = { id: string; participant_name: string; team_name?: string | null; rank: number; kills: number; points: number; prize_amount?: number };
+type MatchRow = { id: string; match_number: number; map: string; start_at?: string | null; status: string; notes?: string | null };
 
 const TABS = [
   "overview",
@@ -61,9 +65,17 @@ type Tab = (typeof TABS)[number];
 export default function TournamentDetailClient({
   tournament: t,
   related = [],
+  content,
+  participants = [],
+  results = [],
+  matches = [],
 }: {
   tournament: AnyTournament;
   related?: AnyTournament[];
+  content?: DetailContent | null;
+  participants?: Participant[];
+  results?: ResultRow[];
+  matches?: MatchRow[];
 }) {
   const { lang, t: tr } = useLanguage();
   const [tab, setTab] = useState<Tab>("overview");
@@ -75,8 +87,12 @@ export default function TournamentDetailClient({
   const isClosed = t.status === "ended";
   const canRegister = !isFull && !isClosed;
   const map = t.map || "Bermuda";
-  const prizes = defaultPrizes(t.prizePool, t.mode);
-  const schedule = defaultSchedule(t.startAt, map);
+  const prizes = Array.isArray(content?.prizes) ? content.prizes as {place:string;amount:number}[] : defaultPrizes(t.prizePool, t.mode);
+  const schedule = Array.isArray(content?.schedule) ? content.schedule as {match:number;map:string;time:string;status:string}[] : defaultSchedule(t.startAt, map);
+  const rules = Array.isArray(content?.rules) ? content.rules as string[] : GENERAL_RULES[lang];
+  const bannedItems = Array.isArray(content?.banned_items) ? content.banned_items as string[] : BANNED[lang];
+  const penalties = Array.isArray(content?.penalties) ? content.penalties as {offense:Record<string,string>;action:Record<string,string>}[] : PENALTIES;
+  const placementPoints = Array.isArray(content?.placement_points) ? content.placement_points as {place:number;points:number}[] : PLACEMENT_POINTS;
   const cover = t.cover || BRAND.cover;
 
   const tabLabel = (key: Tab) => {
@@ -313,9 +329,7 @@ export default function TournamentDetailClient({
                   </ul>
                   <div className="card-dark p-4 text-sm text-white/70 leading-relaxed">
                     <strong className="text-white block mb-1">{tr("detail.organizer")}</strong>
-                    {lang === "bn"
-                      ? "রুম আইডি ম্যাচের ১০ মিনিট আগে আনলক হবে। পেইড কাপে পেমেন্ট কনফার্ম না হলে স্লট বাতিল হতে পারে। ফেয়ার প্লে করুন।"
-                      : "Room ID unlocks 10 minutes before start. Paid cups need payment confirmation or the slot may be cancelled. Play fair."}
+                    {content?.organizer_note || (lang === "bn" ? "রুম আইডি ম্যাচের ১০ মিনিট আগে আনলক হবে। পেইড কাপে পেমেন্ট কনফার্ম না হলে স্লট বাতিল হতে পারে। ফেয়ার প্লে করুন।" : "Room ID unlocks 10 minutes before start. Paid cups need payment confirmation or the slot may be cancelled. Play fair.")}
                   </div>
                 </div>
 
@@ -347,7 +361,7 @@ export default function TournamentDetailClient({
                     {tr("detail.rules")}
                   </h2>
                   <ol className="space-y-3 list-decimal list-inside text-sm text-white/80 leading-relaxed">
-                    {GENERAL_RULES[lang].map((rule, i) => (
+                    {rules.map((rule, i) => (
                       <li key={i} className="pl-1">
                         {rule}
                       </li>
@@ -360,7 +374,7 @@ export default function TournamentDetailClient({
                     {tr("detail.banned")}
                   </h3>
                   <ul className="space-y-2">
-                    {BANNED[lang].map((item, i) => (
+                    {bannedItems.map((item, i) => (
                       <li
                         key={i}
                         className="flex gap-2 text-sm text-red-300/90 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"
@@ -385,10 +399,10 @@ export default function TournamentDetailClient({
                         </tr>
                       </thead>
                       <tbody className="text-white/80">
-                        {PENALTIES.map((row, i) => (
+                        {penalties.map((row, i) => (
                           <tr key={i} className="border-t border-white/5">
-                            <td className="px-4 py-3">{row.offense[lang]}</td>
-                            <td className="px-4 py-3 text-[#FF5C00]">{row.action[lang]}</td>
+                            <td className="px-4 py-3">{row.offense[lang] || row.offense.en || ""}</td>
+                            <td className="px-4 py-3 text-[#FF5C00]">{row.action[lang] || row.action.en || ""}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -412,7 +426,7 @@ export default function TournamentDetailClient({
                         </tr>
                       </thead>
                       <tbody className="text-white/80">
-                        {PLACEMENT_POINTS.map((row) => (
+                        {placementPoints.map((row) => (
                           <tr key={row.place} className="border-t border-white/5">
                             <td className="px-4 py-2.5">#{row.place}</td>
                             <td className="px-4 py-2.5 font-semibold text-[#FF5C00]">
@@ -439,9 +453,9 @@ export default function TournamentDetailClient({
                 <h2 className="font-heading text-2xl font-bold text-white mb-2">
                   {tr("detail.schedule")}
                 </h2>
-                {schedule.map((m) => (
+                {schedule.map((m, i) => (
                   <div
-                    key={m.match}
+                    key={m.match ?? i}
                     className="card-dark p-4 flex items-center gap-4"
                   >
                     <div className="w-12 h-12 rounded-xl bg-[#FF5C00]/20 text-[#FF5C00] font-heading font-bold flex items-center justify-center">
@@ -452,7 +466,7 @@ export default function TournamentDetailClient({
                         Match {m.match} · {m.map}
                       </div>
                       <div className="text-xs text-white/50 mt-0.5">
-                        {bdTime(m.time)}
+                        {m.time ? bdTime(m.time) : "Time to be announced"}
                       </div>
                     </div>
                     <span className="text-xs uppercase font-bold text-white/40">
@@ -507,24 +521,17 @@ export default function TournamentDetailClient({
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {Array.from({ length: Math.min(t.slotsFilled, 12) }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="card-dark p-4 flex items-center gap-3"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FF5C00]/40 to-[#FF8A00]/20 flex items-center justify-center text-white font-heading font-bold text-sm">
-                        {i + 1}
-                      </div>
+                  {participants.map((player, i) => (
+                    <div key={player.id} className="card-dark p-4 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FF5C00]/40 to-[#FF8A00]/20 flex items-center justify-center text-white font-heading font-bold text-sm">{player.slot_number || i + 1}</div>
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-white truncate">
-                          Slot #{i + 1}
-                        </div>
-                        <div className="text-[10px] text-white/40">Registered</div>
+                        <div className="text-sm font-semibold text-white truncate">{player.team_name || player.display_name}</div>
+                        <div className="text-[10px] text-white/40 truncate">{player.display_name}{player.game_uid ? " · UID " + player.game_uid : ""}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                {t.slotsFilled === 0 && (
+                {participants.length === 0 && (
                   <p className="text-white/50 text-sm">No teams registered yet.</p>
                 )}
               </div>
@@ -536,12 +543,14 @@ export default function TournamentDetailClient({
                 <h2 className="font-heading text-2xl font-bold text-white mb-4">
                   {tr("detail.results")}
                 </h2>
-                {t.status !== "ended" ? (
+                {t.status !== "ended" && results.length === 0 ? (
                   <div className="card-dark p-8 text-center text-white/50 text-sm">
                     {lang === "bn"
                       ? "রেজাল্ট টুর্নামেন্ট শেষ হওয়ার পর এখানে দেখা যাবে।"
                       : "Results will appear here after the tournament is completed."}
                   </div>
+                ) : results.length === 0 ? (
+                  <div className="card-dark p-8 text-center text-white/50 text-sm">No results have been published yet.</div>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-white/10">
                     <table className="w-full text-sm text-left">
@@ -554,12 +563,12 @@ export default function TournamentDetailClient({
                         </tr>
                       </thead>
                       <tbody className="text-white/80">
-                        {[1, 2, 3, 4, 5].map((r) => (
-                          <tr key={r} className="border-t border-white/5">
-                            <td className="px-4 py-3 font-bold text-[#FF5C00]">{r}</td>
-                            <td className="px-4 py-3">Slot #{r}</td>
-                            <td className="px-4 py-3">{12 - r * 2}</td>
-                            <td className="px-4 py-3 font-semibold">{40 - r * 5}</td>
+                        {results.map((row) => (
+                          <tr key={row.id} className="border-t border-white/5">
+                            <td className="px-4 py-3 font-bold text-[#FF5C00]">{row.rank}</td>
+                            <td className="px-4 py-3">{row.team_name || row.participant_name}</td>
+                            <td className="px-4 py-3">{row.kills}</td>
+                            <td className="px-4 py-3 font-semibold">{row.points}</td>
                           </tr>
                         ))}
                       </tbody>

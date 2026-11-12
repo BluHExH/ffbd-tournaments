@@ -63,42 +63,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(dest);
   }
 
-  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const verifiedTotp = (factors?.totp ?? []).filter((f) => f.status === "verified");
-  const hasVerifiedTotp = verifiedTotp.length > 0;
-  const isAal2 = aal?.currentLevel === "aal2";
-
-  if (isAal2) {
-    if (isLoginPage || isMfaPage) {
-      const dest = request.nextUrl.clone();
-      dest.pathname = "/admin";
-      dest.search = "";
-      return NextResponse.redirect(dest);
-    }
-    return supabaseResponse;
-  }
-
-  if (!hasVerifiedTotp) {
-    if (isMfaPage) return supabaseResponse;
-    const dest = request.nextUrl.clone();
-    dest.pathname = "/admin/mfa";
-    dest.search = "";
-    return NextResponse.redirect(dest);
-  }
-
-  if (isLoginPage) {
-    if (request.nextUrl.searchParams.get("step") !== "mfa") {
-      const dest = request.nextUrl.clone();
-      dest.pathname = "/admin/login";
-      dest.searchParams.set("step", "mfa");
-      return NextResponse.redirect(dest);
-    }
-    return supabaseResponse;
-  }
-
-  const dest = request.nextUrl.clone();
-  dest.pathname = "/admin/login";
-  dest.searchParams.set("step", "mfa");
-  return NextResponse.redirect(dest);
+  // Keep the edge middleware lightweight: verify the user session here,
+  // while the server-side requireAdmin() performs the authoritative admin + AAL2 check.
+  // Repeating MFA factor/AAL network calls on every navigation caused avoidable latency.
+  if (isLoginPage || isMfaPage) return supabaseResponse;
+  return supabaseResponse;
 }

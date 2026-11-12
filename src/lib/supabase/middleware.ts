@@ -19,12 +19,18 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  type CookieToSet = {
+    name: string;
+    value: string;
+    options?: Parameters<NextResponse["cookies"]["set"]>[2];
+  };
+
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: CookieToSet[]) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value)
         );

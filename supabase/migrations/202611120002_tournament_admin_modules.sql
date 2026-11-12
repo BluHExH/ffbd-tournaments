@@ -48,8 +48,6 @@ CREATE TABLE IF NOT EXISTS public.tournament_matches (
   map text NOT NULL DEFAULT 'Bermuda',
   start_at timestamptz,
   status text NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','live','completed','cancelled')),
-  room_id text,
-  room_password text,
   notes text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -89,9 +87,9 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_public_read', tbl);
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_admin_all', tbl);
     IF tbl <> 'website_settings' THEN
-      EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', tbl || '_public_read', tbl);
-    ELSE
-      EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', tbl || '_public_read', tbl);
+      IF tbl IN ('tournament_content','tournament_participants','tournament_matches','tournament_results','website_settings') THEN
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', tbl || '_public_read', tbl);
+      END IF;
     END IF;
     EXECUTE format('CREATE POLICY %I ON public.%I FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin())', tbl || '_admin_all', tbl);
     EXECUTE format('GRANT SELECT ON public.%I TO anon, authenticated', tbl);

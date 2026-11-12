@@ -14,7 +14,7 @@ export function AdminDataManager({
   tournamentOptions?: { id: string; title: string; uid: string }[];
   orderBy?: string; primaryKey?: string;
 }) {
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [rows, setRows] = useState<Row[]>([]);
   const [values, setValues] = useState<Row>({});
   const [editing, setEditing] = useState<string | null>(null);

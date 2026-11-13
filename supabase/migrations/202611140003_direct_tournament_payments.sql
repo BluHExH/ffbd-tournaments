@@ -85,11 +85,15 @@ BEGIN
 
   IF p_approve THEN
     UPDATE public.tournament_payments SET status = 'approved', note = coalesce(p_note,note) WHERE id = p_payment_id;
-    UPDATE public.tournament_participants SET status = 'confirmed' WHERE id = v_payment.participant_id;
+    IF v_payment.participant_id IS NOT NULL THEN
+      UPDATE public.tournament_participants SET status = 'confirmed' WHERE id = v_payment.participant_id;
+    END IF;
   ELSE
     UPDATE public.tournament_payments SET status = 'rejected', note = coalesce(p_note,note) WHERE id = p_payment_id;
-    UPDATE public.tournament_participants SET status = 'rejected' WHERE id = v_payment.participant_id;
-    UPDATE public.tournaments SET slots_filled = greatest(0,slots_filled-1) WHERE id = v_payment.tournament_id;
+    IF v_payment.participant_id IS NOT NULL THEN
+      UPDATE public.tournament_participants SET status = 'rejected' WHERE id = v_payment.participant_id;
+      UPDATE public.tournaments SET slots_filled = greatest(0,slots_filled-1) WHERE id = v_payment.tournament_id;
+    END IF;
   END IF;
 END;
 $$;

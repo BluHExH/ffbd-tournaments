@@ -36,15 +36,29 @@ jobs:
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --wait
+        run: |
+          set -o pipefail
+          npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --wait 2>&1 | tee /tmp/eas-build.log
+          BUILD_URL="$(grep -Eo 'https://expo\\.dev/accounts/[^[:space:]]+/projects/[^[:space:]]+/builds/[0-9a-f-]{36}' /tmp/eas-build.log | tail -n 1)"
+          if [ -z "$BUILD_URL" ]; then
+            echo "Could not find the completed EAS build URL in the build log."
+            exit 1
+          fi
+          echo "EAS_BUILD_ID=${BUILD_URL##*/}" >> "$GITHUB_ENV"
+          echo "Completed EAS build: $BUILD_URL"
 
       - name: Download APK from EAS
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
+          set -euo pipefail
           mkdir -p artifacts
-          npx --yes eas-cli@latest build:download --latest --platform android --path ./artifacts/BANGLAR-TOURNAMENTS.apk
+          DOWNLOAD_JSON="$(npx --yes eas-cli@latest build:download --id "$EAS_BUILD_ID" --non-interactive --json)"
+          APK_SOURCE="$(node -e 'const result = JSON.parse(process.argv[1]); if (!result.path) process.exit(1); process.stdout.write(result.path);' "$DOWNLOAD_JSON")"
+          test -f "$APK_SOURCE"
+          cp "$APK_SOURCE" ./artifacts/BANGLAR-TOURNAMENTS.apk
+          ls -lh ./artifacts/BANGLAR-TOURNAMENTS.apk
 
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2

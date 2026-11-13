@@ -1,1 +1,90 @@
-import {useEffect,useState} from "react";import {router} from "expo-router";import {Screen} from "@/components/Screen";import {Button,Card,Heading,Muted,Subheading} from "@/components/UI";import {supabase} from "@/lib/supabase";export default function Admin(){const [message,setMessage]=useState("Checking admin access…");const [allowed,setAllowed]=useState(false);useEffect(()=>{let active=true;const verify=async()=>{if(!supabase){if(active)setMessage("Supabase configuration required.");return}const {data:u,error:ue}=await supabase.auth.getUser();if(ue||!u.user){if(active)setMessage("Please sign in first.");return}const {data:a,error:ae}=await supabase.from("admins").select("id").eq("id",u.user.id).maybeSingle();if(ae||!a){if(active)setMessage("This account is not registered as an admin.");return}const {data:m,error:me}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(me||m?.currentLevel!=="aal2"){if(active)setMessage("Admin MFA verification (AAL2) is required.");return}if(active){setAllowed(true);setMessage("Verified administrator session (AAL2).")}};void verify();return()=>{active=false}},[]);return <Screen><Muted>RESTRICTED AREA</Muted><Heading>Admin dashboard</Heading><Card><Subheading>Security check</Subheading><Muted>{message}</Muted>{allowed?<><Subheading>Management modules</Subheading><Muted>Tournament, player, payment, wallet and homepage management will be integrated in later stages.</Muted></>:null}</Card><Button onPress={()=>router.replace("/(tabs)/account")}>Back to account</Button></Screen>}
+import { useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { WebView } from "react-native-webview";
+import { theme } from "@/lib/theme";
+
+const ADMIN_URL = "https://ff-bd-tournaments.vercel.app/admin";
+
+export default function Admin() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.back}>
+          <Text style={styles.backText}>‹</Text>
+        </Pressable>
+        <View style={styles.heading}>
+          <Text style={styles.title}>BANGLAR ADMIN</Text>
+          <Text style={styles.subtitle}>SECURE CONTROL CENTER</Text>
+        </View>
+        <Pressable onPress={() => { setError(false); setLoading(true); setReloadKey((v) => v + 1); }} style={styles.reload}>
+          <Text style={styles.reloadText}>↻</Text>
+        </Pressable>
+      </View>
+      {error ? (
+        <View style={styles.message}>
+          <Text style={styles.messageTitle}>Could not load Admin Dashboard</Text>
+          <Text style={styles.messageBody}>Check your internet connection and try again.</Text>
+          <Pressable onPress={() => { setError(false); setLoading(true); setReloadKey((v) => v + 1); }} style={styles.retry}>
+            <Text style={styles.retryText}>TRY AGAIN</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.webContainer}>
+          <WebView
+            key={reloadKey}
+            source={{ uri: ADMIN_URL }}
+            style={styles.web}
+            javaScriptEnabled
+            domStorageEnabled
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            allowsBackForwardNavigationGestures
+            originWhitelist={["https://*"]}
+            onLoadStart={() => setLoading(true)}
+            onLoadEnd={() => setLoading(false)}
+            onError={() => { setLoading(false); setError(true); }}
+            onHttpError={(event) => {
+              if (event.nativeEvent.statusCode >= 500) {
+                setLoading(false);
+                setError(true);
+              }
+            }}
+            startInLoadingState
+          />
+          {loading && (
+            <View pointerEvents="none" style={styles.loading}>
+              <ActivityIndicator size="large" color={theme.accent} />
+              <Text style={styles.loadingText}>Opening secure admin panel…</Text>
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: theme.background },
+  header: { height: 58, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,.09)", backgroundColor: "#0B1221" },
+  back: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: "rgba(255,255,255,.06)" },
+  backText: { color: "#fff", fontSize: 30, lineHeight: 32 },
+  heading: { flex: 1, paddingLeft: 12 },
+  title: { color: "#fff", fontSize: 13, fontWeight: "900", letterSpacing: 1 },
+  subtitle: { color: "rgba(255,255,255,.4)", fontSize: 8, fontWeight: "800", letterSpacing: 1.6, marginTop: 3 },
+  reload: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: "rgba(255,255,255,.06)" },
+  reloadText: { color: theme.accent, fontSize: 24, fontWeight: "700" },
+  webContainer: { flex: 1 },
+  web: { flex: 1, backgroundColor: "#0B1221" },
+  loading: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: "#0B1221" },
+  loadingText: { color: "rgba(255,255,255,.65)", fontSize: 12, fontWeight: "600" },
+  message: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28 },
+  messageTitle: { color: "#fff", fontSize: 17, fontWeight: "900", textAlign: "center" },
+  messageBody: { color: "rgba(255,255,255,.55)", fontSize: 13, textAlign: "center", marginTop: 8 },
+  retry: { marginTop: 20, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 12, backgroundColor: theme.accent },
+  retryText: { color: "#111827", fontSize: 11, fontWeight: "900", letterSpacing: 1 },
+});

@@ -7,6 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./banglar-tournaments-app-icon.png",
     "platforms": [
       "ios",
       "android",
@@ -23,11 +24,17 @@
       "expo-font"
     ],
     "android": {
-      "package": "com.banglartournaments.app"
+      "package": "com.banglartournaments.app",
+      "icon": "./banglar-tournaments-app-icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./banglar-tournaments-app-icon.png",
+        "backgroundColor": "#07110B"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.banglartournaments.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./banglar-tournaments-app-icon.png"
     },
     "experiments": {
       "typedRoutes": true

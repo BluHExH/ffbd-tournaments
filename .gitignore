@@ -38,3 +38,9 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+# Expo / React Native
+**/node_modules/
+**/.expo/
+**/dist/
+**/web-build/

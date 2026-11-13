@@ -1,4 +1,5 @@
 import {useLocalSearchParams} from "expo-router";
+import type {ComponentType} from "react";
 import {Heading,Muted} from "@/components/UI";
 import {Screen} from "@/components/Screen";
 import {
@@ -6,7 +7,7 @@ import {
   ResultsSection,RulesSection,TopPlayersSection
 } from "@/components/ProfileSections";
 
-const sections:Record<string,()=>JSX.Element>={
+const sections:Record<string,ComponentType>={
   "my-profile":PlayerProfileSection,
   "my-match":MyMatchesSection,
   results:ResultsSection,

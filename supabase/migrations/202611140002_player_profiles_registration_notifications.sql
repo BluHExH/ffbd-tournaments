@@ -124,8 +124,7 @@ CREATE OR REPLACE FUNCTION public.link_result_to_registered_player()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = ''
-AS $
-BEGIN
+AS $$BEGIN
   IF NEW.user_id IS NULL THEN
     SELECT p.user_id INTO NEW.user_id
     FROM public.tournament_participants p

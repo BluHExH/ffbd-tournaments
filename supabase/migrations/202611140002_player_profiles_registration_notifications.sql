@@ -60,6 +60,12 @@ GRANT SELECT ON public.player_profiles TO anon, authenticated;
 GRANT INSERT, UPDATE ON public.player_profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.player_private_profiles TO authenticated;
 
+-- Backfill profiles for accounts that existed before this migration.
+INSERT INTO public.player_profiles(user_id, username)
+SELECT u.id, 'Player' || upper(substr(replace(u.id::text, '-', ''), 1, 8))
+FROM auth.users u
+ON CONFLICT (user_id) DO NOTHING;
+
 CREATE OR REPLACE FUNCTION public.create_player_profile_for_new_user()
 RETURNS trigger
 LANGUAGE plpgsql

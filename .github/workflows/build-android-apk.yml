@@ -39,13 +39,15 @@ jobs:
         run: |
           set -o pipefail
           npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --wait 2>&1 | tee /tmp/eas-build.log
-          BUILD_URL="$(grep -Eo 'https://expo\\.dev/accounts/[^[:space:]]+/projects/[^[:space:]]+/builds/[0-9a-f-]{36}' /tmp/eas-build.log | tail -n 1)"
-          if [ -z "$BUILD_URL" ]; then
-            echo "Could not find the completed EAS build URL in the build log."
+          BUILD_ID="$(grep -Eo 'builds/[0-9a-f-]{36}' /tmp/eas-build.log | tail -n 1 | cut -d/ -f2)"
+          if [ -z "$BUILD_ID" ]; then
+            echo "Could not find the completed EAS build ID in the build log."
+            echo "Recent build log output:"
+            tail -n 40 /tmp/eas-build.log
             exit 1
           fi
-          echo "EAS_BUILD_ID=${BUILD_URL##*/}" >> "$GITHUB_ENV"
-          echo "Completed EAS build: $BUILD_URL"
+          echo "EAS_BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "Completed EAS build ID: $BUILD_ID"
 
       - name: Download APK from EAS
         working-directory: mobile

@@ -1,1 +1,1 @@
-export const theme={background:"#0D0F12",surface:"#171A20",raised:"#20242C",border:"#2B303A",text:"#F5F7FA",muted:"#929AA8",accent:"#F04438",green:"#26C281",gold:"#F6C453",radius:18};
+export const theme={background:"#0B1221",backgroundAlt:"#121C2E",surface:"#1A2332",raised:"#202C3D",border:"rgba(255,255,255,0.10)",text:"#F8FAFC",muted:"#94A3B8",accent:"#FF5C00",accentEnd:"#FF8A00",green:"#22C55E",gold:"#FBBF24",red:"#EF4444",radius:16,fontHeading:"Rajdhani",fontBody:"Inter",fontBangla:"Hind Siliguri"} as const;

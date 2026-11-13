@@ -1,6 +1,1 @@
-import type {PropsWithChildren} from "react";
-import {ScrollView,StyleSheet} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {theme} from "@/lib/theme";
-export function Screen({children}:PropsWithChildren){return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content}>{children}</ScrollView></SafeAreaView>}
-const s=StyleSheet.create({safe:{flex:1,backgroundColor:theme.background},content:{padding:20,gap:16,flexGrow:1}});
+import type {PropsWithChildren} from "react";import {ScrollView,StyleSheet,View} from "react-native";import {SafeAreaView} from "react-native-safe-area-context";import {theme} from "@/lib/theme";export function Screen({children}:PropsWithChildren){return <SafeAreaView style={s.safe}><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}><View style={s.glow}/>{children}</ScrollView></SafeAreaView>}const s=StyleSheet.create({safe:{flex:1,backgroundColor:theme.background},content:{paddingHorizontal:16,paddingTop:10,paddingBottom:34,gap:18,flexGrow:1},glow:{position:"absolute",top:-140,right:-110,width:260,height:260,borderRadius:160,backgroundColor:"rgba(255,92,0,0.07)"}});

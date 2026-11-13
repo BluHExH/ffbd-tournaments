@@ -224,4 +224,35 @@ $$;
 REVOKE ALL ON FUNCTION public.register_for_tournament(uuid,text,text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.register_for_tournament(uuid,text,text,text) TO authenticated;
 
+
+CREATE OR REPLACE FUNCTION public.get_my_tournament_room(p_tournament_id uuid)
+RETURNS TABLE(room_id text, room_password text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_start_at timestamptz;
+BEGIN
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+  SELECT t.start_at INTO v_start_at
+    FROM public.tournaments t
+    JOIN public.tournament_participants p ON p.tournament_id = t.id
+    WHERE t.id = p_tournament_id
+      AND p.user_id = v_user_id
+      AND p.status IN ('registered','confirmed');
+  IF NOT FOUND THEN RAISE EXCEPTION 'You are not registered for this tournament'; END IF;
+  IF v_start_at > now() + interval '10 minutes' THEN
+    RAISE EXCEPTION 'Room details unlock 10 minutes before match start';
+  END IF;
+  RETURN QUERY
+    SELECT c.room_id, c.room_password
+    FROM public.tournament_room_credentials c
+    WHERE c.tournament_id = p_tournament_id;
+END;
+$;
+REVOKE ALL ON FUNCTION public.get_my_tournament_room(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_tournament_room(uuid) TO authenticated;
+
 NOTIFY pgrst, 'reload schema';

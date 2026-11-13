@@ -241,7 +241,9 @@ BEGIN
     JOIN public.tournament_participants p ON p.tournament_id = t.id
     WHERE t.id = p_tournament_id
       AND p.user_id = v_user_id
-      AND p.status IN ('registered','confirmed');
+      AND p.status IN ('registered','confirmed')
+      AND t.status <> 'ended'
+      AND now() <= t.start_at + interval '6 hours';
   IF NOT FOUND THEN RAISE EXCEPTION 'You are not registered for this tournament'; END IF;
   IF v_start_at > now() + interval '10 minutes' THEN
     RAISE EXCEPTION 'Room details unlock 10 minutes before match start';

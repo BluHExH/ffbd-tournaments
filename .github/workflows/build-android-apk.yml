@@ -16,15 +16,15 @@ concurrency:
 jobs:
   build-android-apk:
     name: Build Android APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
@@ -32,21 +32,19 @@ jobs:
         working-directory: mobile
         run: npm ci
 
-      - name: Set up Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
       - name: Build Android APK with EAS
         working-directory: mobile
-        run: eas build --platform android --profile preview --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli@latest build --platform android --profile preview --non-interactive --wait
 
       - name: Download APK from EAS
         working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           mkdir -p artifacts
-          eas build:download --latest --platform android --path ./artifacts/BANGLAR-TOURNAMENTS.apk
+          npx --yes eas-cli@latest build:download --latest --platform android --path ./artifacts/BANGLAR-TOURNAMENTS.apk
 
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2

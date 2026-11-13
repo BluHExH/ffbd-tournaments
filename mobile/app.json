@@ -19,7 +19,8 @@
         {
           "configureAndroidBackup": true
         }
-      ]
+      ],
+      "expo-font"
     ],
     "android": {
       "package": "com.banglartournaments.app"

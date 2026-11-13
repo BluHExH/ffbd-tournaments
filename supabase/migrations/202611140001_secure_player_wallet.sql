@@ -44,6 +44,8 @@ CREATE INDEX IF NOT EXISTS wallet_deposit_requests_user_created_idx
   ON public.wallet_deposit_requests(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS wallet_deposit_requests_status_idx
   ON public.wallet_deposit_requests(status, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS wallet_deposit_payment_reference_unique
+  ON public.wallet_deposit_requests(payment_method, transaction_reference);
 
 CREATE TABLE IF NOT EXISTS public.wallet_withdrawal_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -157,7 +159,7 @@ BEGIN
   RETURNING id, transaction_id INTO v_request_id, v_transaction_id;
 
   INSERT INTO public.wallet_transactions(id, user_id, transaction_type, direction, amount_paisa, status, reference_id, idempotency_key, description)
-  VALUES (v_transaction_id, v_user_id, 'withdrawal', 'debit', p_amount_paisa, 'completed', v_request_id, 'withdrawal:' || v_request_id::text, 'Wallet withdrawal requested');
+  VALUES (v_transaction_id, v_user_id, 'withdrawal', 'debit', p_amount_paisa, 'pending', v_request_id, 'withdrawal:' || v_request_id::text, 'Wallet withdrawal awaiting admin review');
   RETURN v_request_id;
 END;
 $$;
@@ -215,9 +217,15 @@ BEGIN
   IF v_request.status <> 'pending' THEN RAISE EXCEPTION 'Withdrawal request has already been reviewed'; END IF;
 
   IF p_approve THEN
+    UPDATE public.wallet_transactions SET status = 'completed', description = 'Withdrawal approved by admin'
+      WHERE id = v_request.transaction_id AND status = 'pending';
+    IF NOT FOUND THEN RAISE EXCEPTION 'Pending withdrawal ledger entry not found'; END IF;
     UPDATE public.wallet_withdrawal_requests SET status = 'approved', admin_note = p_note,
       reviewed_by = auth.uid(), reviewed_at = now() WHERE id = p_request_id;
   ELSE
+    UPDATE public.wallet_transactions SET status = 'rejected', description = 'Withdrawal rejected; funds returned to wallet'
+      WHERE id = v_request.transaction_id AND status = 'pending';
+    IF NOT FOUND THEN RAISE EXCEPTION 'Pending withdrawal ledger entry not found'; END IF;
     INSERT INTO public.wallet_accounts(user_id) VALUES (v_request.user_id) ON CONFLICT (user_id) DO NOTHING;
     UPDATE public.wallet_accounts SET balance_paisa = balance_paisa + v_request.amount_paisa, updated_at = now()
       WHERE user_id = v_request.user_id;

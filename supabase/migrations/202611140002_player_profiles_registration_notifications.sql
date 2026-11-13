@@ -264,7 +264,7 @@ RETURNS TABLE(room_id text, room_password text)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $$
 DECLARE
   v_user_id uuid := auth.uid();
   v_start_at timestamptz;
@@ -287,7 +287,7 @@ BEGIN
     FROM public.tournament_room_credentials c
     WHERE c.tournament_id = p_tournament_id;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.get_my_tournament_room(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_my_tournament_room(uuid) TO authenticated;
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 
-type Field = { key: string; label: string; type?: "text" | "number" | "date" | "textarea" | "select"; required?: boolean; readOnly?: boolean; options?: string[] };
+type Field = { key: string; label: string; type?: "text" | "number" | "date" | "textarea" | "select" | "uuid"; required?: boolean; readOnly?: boolean; options?: string[] };
 type Row = Record<string, unknown> & { id?: string; key?: string };
 
 export function AdminDataManager({
@@ -64,6 +64,7 @@ export function AdminDataManager({
       if (field.readOnly) continue;
       const raw = values[field.key];
       if (field.type === "number") payload[field.key] = raw === "" || raw == null ? 0 : Number(raw);
+      else if (field.type === "uuid") payload[field.key] = raw == null || String(raw).trim() === "" ? null : String(raw).trim();
       else if (field.type === "date") payload[field.key] = raw ? new Date(String(raw)).toISOString() : null;
       else payload[field.key] = raw ?? field.options?.[0] ?? "";
     }

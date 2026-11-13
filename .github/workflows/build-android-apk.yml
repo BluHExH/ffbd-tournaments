@@ -52,7 +52,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-apk-${{ github.run_number }}
-          name: Android APK build #${{ github.run_number }}
+          name: "Android APK build #${{ github.run_number }}"
           prerelease: true
           make_latest: false
           files: mobile/artifacts/BANGLAR-TOURNAMENTS.apk

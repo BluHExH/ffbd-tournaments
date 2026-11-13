@@ -28,7 +28,8 @@ const primaryLinks = [
 ];
 
 const managementLinks = [
-  { href: "/admin/registrations", label: "Players & Registrations", icon: Users },\n  { href: "/admin/players", label: "Player Accounts", icon: Users },
+  { href: "/admin/registrations", label: "Players & Registrations", icon: Users },
+  { href: "/admin/players", label: "Player Accounts", icon: Users },
   { href: "/admin/payments", label: "Tournament Payments", icon: CreditCard },
   { href: "/admin/wallet", label: "Player Wallet", icon: WalletCards },
   { href: "/admin/matches", label: "Matches & Results", icon: Swords },

@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { WebView } from "react-native-webview";
 import { theme } from "@/lib/theme";
 
-const ADMIN_URL = "https://ff-bd-tournaments.vercel.app/admin";
+const ADMIN_URL = "https://ffbd-tournaments.vercel.app/admin";
 
 export default function Admin() {
   const [loading, setLoading] = useState(true);

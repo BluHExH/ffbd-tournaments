@@ -103,7 +103,7 @@ SELECT
   p.user_id,
   p.username,
   p.avatar_url,
-  count(DISTINCT r.tournament_id)::integer AS total_matches,
+  count(r.id)::integer AS total_matches,
   count(*) FILTER (WHERE r.rank = 1)::integer AS wins,
   coalesce(sum(r.kills), 0)::bigint AS total_kills,
   coalesce(sum(r.points), 0)::bigint AS total_points,
@@ -112,6 +112,34 @@ FROM public.player_profiles p
 LEFT JOIN public.tournament_results r ON r.user_id = p.user_id
 GROUP BY p.user_id, p.username, p.avatar_url;
 GRANT SELECT ON public.player_leaderboard TO anon, authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.link_result_to_registered_player()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $
+BEGIN
+  IF NEW.user_id IS NULL THEN
+    SELECT p.user_id INTO NEW.user_id
+    FROM public.tournament_participants p
+    WHERE p.tournament_id = NEW.tournament_id
+      AND p.user_id IS NOT NULL
+      AND (
+        lower(p.display_name) = lower(NEW.participant_name)
+        OR (NEW.team_name IS NOT NULL AND lower(coalesce(p.team_name,'')) = lower(NEW.team_name))
+      )
+    ORDER BY p.created_at ASC
+    LIMIT 1;
+  END IF;
+  RETURN NEW;
+END;
+$;
+DROP TRIGGER IF EXISTS tournament_results_link_player ON public.tournament_results;
+CREATE TRIGGER tournament_results_link_player
+  BEFORE INSERT OR UPDATE OF participant_name, team_name, tournament_id
+  ON public.tournament_results
+  FOR EACH ROW EXECUTE FUNCTION public.link_result_to_registered_player();
 
 CREATE TABLE IF NOT EXISTS public.homepage_banners (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -241,7 +269,7 @@ BEGIN
     JOIN public.tournament_participants p ON p.tournament_id = t.id
     WHERE t.id = p_tournament_id
       AND p.user_id = v_user_id
-      AND p.status IN ('registered','confirmed')
+      AND p.status = 'confirmed'
       AND t.status <> 'ended'
       AND now() <= t.start_at + interval '6 hours';
   IF NOT FOUND THEN RAISE EXCEPTION 'You are not registered for this tournament'; END IF;

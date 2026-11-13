@@ -16,10 +16,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
+      - name: Install website dependencies
         run: npm install --no-audit --no-fund
-      - name: Type check
+      - name: Website type check
         run: npx tsc --noEmit
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Mobile type check
+        working-directory: mobile
+        run: npm run typecheck
       - name: Lint
         run: npm run lint
       - name: Production build

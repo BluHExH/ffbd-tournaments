@@ -10,6 +10,7 @@ import {theme} from "@/lib/theme";
 type MenuItem={label:string;icon:keyof typeof Ionicons.glyphMap;section:string;description?:string};
 const groups:{title:string;items:MenuItem[]}[]=[
  {title:"WALLET & PAYMENTS",items:[
+  {label:"Wallet",icon:"wallet-outline",section:"wallet",description:"View your balance and wallet activity"},
   {label:"Add Money",icon:"add-circle-outline",section:"wallet",description:"Add funds to your wallet"},
   {label:"Withdraw",icon:"cash-outline",section:"wallet",description:"Request a withdrawal"},
   {label:"Transaction History",icon:"receipt-outline",section:"wallet",description:"View deposits and payments"},

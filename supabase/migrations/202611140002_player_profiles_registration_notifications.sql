@@ -160,9 +160,12 @@ GRANT INSERT ON public.player_notifications TO authenticated;
 
 DROP POLICY IF EXISTS ticker_notice_public_read ON public.website_settings;
 CREATE POLICY ticker_notice_public_read ON public.website_settings
-  FOR SELECT TO anon, authenticated USING (key = 'ticker_notice');
+  FOR SELECT TO anon, authenticated USING (key IN ('ticker_notice','platform_rules'));
 INSERT INTO public.website_settings(key, value, description)
 VALUES ('ticker_notice', 'যেকোনো প্রয়োজনে অ্যাডমিনকে ইনবক্স করুন, সমাধান পাবেন ইনশাআল্লাহ।', 'Public scrolling notice shown in the mobile app')
+ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.website_settings(key, value, description)
+VALUES ('platform_rules', 'Play fairly. Do not use hacks, cheats, emulators or teaming. Follow tournament room instructions. Admin decisions after result review are final.', 'Public platform rules displayed in the mobile app')
 ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.register_for_tournament(

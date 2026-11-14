@@ -98,4 +98,4 @@ jobs:
           name: "Android APK build #${{ github.run_number }}"
           prerelease: true
           make_latest: false
-          files: mobile/artifacts/BANGLAR-TOURNAMENTS.apk
+          files: mobile/artifacts/${{ env.APK_NAME }}

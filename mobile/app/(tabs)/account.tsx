@@ -35,6 +35,7 @@ function MenuRow({item}:{item:MenuItem}){
 }
 export default function Account(){
  const [email,setEmail]=useState<string|null>(null);
+ const [username,setUsername]=useState<string|null>(null);
  const [admin,setAdmin]=useState(false);
  useEffect(()=>{
   if(!supabase)return;
@@ -44,15 +45,18 @@ export default function Account(){
    if(!active)return;
    setEmail(data.user?.email??null);
    if(data.user){
-    const {data:row}=await supabase!.from("admins").select("id").eq("id",data.user.id).maybeSingle();
-    if(active)setAdmin(Boolean(row));
-   }else if(active)setAdmin(false);
+    const [{data:profile},{data:adminRow}]=await Promise.all([
+     supabase!.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle(),
+     supabase!.from("admins").select("id").eq("id",data.user.id).maybeSingle()
+    ]);
+    if(active){setUsername(profile?.username?.trim()||null);setAdmin(Boolean(adminRow));}
+   }else if(active){setUsername(null);setAdmin(false);}
   };
   void load();
   const {data:sub}=supabase.auth.onAuthStateChange(()=>{void load()});
   return()=>{active=false;sub.subscription.unsubscribe()};
  },[]);
- const logout=async()=>{await supabase?.auth.signOut();setEmail(null);setAdmin(false)};
+ const logout=async()=>{await supabase?.auth.signOut();setEmail(null);setUsername(null);setAdmin(false)};
  return <Screen>
   <Muted>PLAYER PROFILE</Muted>
   <Heading>Profile</Heading>
@@ -60,8 +64,8 @@ export default function Account(){
    <View style={styles.profileTop}>
     <View style={styles.avatar}><Ionicons name="person" size={27} color={theme.accent}/></View>
     <View style={styles.profileCopy}>
-     <Subheading>{email?"Player Account":"Welcome, Player"}</Subheading>
-     <Muted>{email??"Sign in to access your player account and tournament services."}</Muted>
+     <Subheading>{email?(username??"Username not set"):"Sign in to your account"}</Subheading>
+     <Muted>{email??"Access your player account and tournament services."}</Muted>
     </View>
    </View>
    {!hasSupabaseConfig?<Muted>Mobile Supabase setup is required before account features can be used.</Muted>:email?<><View style={styles.accountActions}>{admin?<Button onPress={()=>router.push("/admin")}>Open admin dashboard</Button>:null}<Button onPress={logout}>Sign out</Button></View></>:<View style={styles.accountActions}><Button onPress={()=>router.push("/login")}>Login</Button><Button onPress={()=>router.push("/register")}>Create account</Button></View>}

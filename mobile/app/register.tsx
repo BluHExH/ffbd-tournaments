@@ -4,8 +4,10 @@ import {router} from "expo-router";
 import {Button} from "@/components/UI";
 import {AuthLayout,authStyles as s} from "@/components/AuthLayout";
 import {supabase} from "@/lib/supabase";
+import {useLanguage} from "@/lib/i18n";
 
 export default function Register(){
+  const {t}=useLanguage();
   const [username,setUsername]=useState("");
   const [email,setEmail]=useState("");
   const [phone,setPhone]=useState("");
@@ -15,6 +17,7 @@ export default function Register(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [success,setSuccess]=useState("");
+
   const submit=async()=>{
     setError("");setSuccess("");
     if(!supabase){setError("App connection is not configured yet. Please contact the tournament team.");return}
@@ -32,19 +35,56 @@ export default function Register(){
       });
       if(error){setError(error.message);return}
       if(data.session){router.replace("/(tabs)/account");return}
-      setSuccess("Account created. Email confirmation is still enabled for this Supabase project. Disable Confirm email in Supabase Authentication settings to enable instant sign-in.");
-    }catch{setError("Something went wrong. Check your connection and try again.");}
-    finally{setBusy(false)}
+      setSuccess("Account created. Email confirmation is still enabled for this Supabase project. Check your email for the confirmation link.");
+    }catch{
+      setError("Something went wrong. Check your connection and try again.");
+    }finally{
+      setBusy(false);
+    }
   };
-  return <AuthLayout eyebrow="JOIN THE COMMUNITY" title="Create your player ID." description="Create one account to explore tournaments and manage your player profile." footer="Already registered?" footerAction="Sign in" onFooterPress={()=>router.replace("/login")}>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>PLAYER USERNAME</Text><TextInput value={username} onChangeText={v=>{setUsername(v);setError("");setSuccess("")}} placeholder="Choose your player name" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} textContentType="username" autoComplete="username" style={s.input}/></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>EMAIL ADDRESS</Text><TextInput value={email} onChangeText={v=>{setEmail(v);setError("");setSuccess("")}} placeholder="you@example.com" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" importantForAutofill="yes" style={s.input}/></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>PHONE NUMBER</Text><TextInput value={phone} onChangeText={v=>{setPhone(v);setError("");setSuccess("")}} placeholder="+8801XXXXXXXXX" placeholderTextColor="#64748B" autoCapitalize="none" keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" style={s.input}/></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>PASSWORD</Text><View style={{position:"relative",justifyContent:"center"}}><TextInput value={password} onChangeText={v=>{setPassword(v);setError("");setSuccess("")}} placeholder="At least 8 characters" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={[s.input,{paddingRight:76}]}/><Pressable onPress={()=>setShowPassword(v=>!v)} style={{position:"absolute",right:13,padding:6}}><Text style={s.link}>{showPassword?"HIDE":"SHOW"}</Text></Pressable></View></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>CONFIRM PASSWORD</Text><TextInput value={confirm} onChangeText={v=>{setConfirm(v);setError("");setSuccess("")}} placeholder="Enter your password again" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={s.input} onSubmitEditing={submit}/></View>
+
+  return <AuthLayout
+    eyebrow={t("auth.register").toUpperCase()}
+    title={t("auth.registerTitle")}
+    description={t("auth.registerDescription")}
+    footer={t("auth.already")}
+    footerAction={t("auth.login")}
+    onFooterPress={()=>router.replace("/login")}
+  >
+    <View style={{gap:7}}>
+      <Text style={s.fieldLabel}>PLAYER USERNAME</Text>
+      <TextInput value={username} onChangeText={v=>{setUsername(v);setError("");setSuccess("")}} placeholder="Choose your player name" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} textContentType="username" autoComplete="username" style={s.input}/>
+    </View>
+
+    <View style={{gap:7}}>
+      <Text style={s.fieldLabel}>{t("auth.email").toUpperCase()}</Text>
+      <TextInput value={email} onChangeText={v=>{setEmail(v);setError("");setSuccess("")}} placeholder={t("auth.emailPlaceholder")} placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" importantForAutofill="yes" style={s.input}/>
+    </View>
+
+    <View style={{gap:7}}>
+      <Text style={s.fieldLabel}>PHONE NUMBER</Text>
+      <TextInput value={phone} onChangeText={v=>{setPhone(v);setError("");setSuccess("")}} placeholder="+8801XXXXXXXXX" placeholderTextColor="#64748B" autoCapitalize="none" keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" style={s.input}/>
+    </View>
+
+    <View style={{gap:7}}>
+      <Text style={s.fieldLabel}>{t("auth.password").toUpperCase()}</Text>
+      <View style={{position:"relative",justifyContent:"center"}}>
+        <TextInput value={password} onChangeText={v=>{setPassword(v);setError("");setSuccess("")}} placeholder={t("auth.passwordHint")} placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={[s.input,{paddingRight:76}]}/>
+        <Pressable onPress={()=>setShowPassword(v=>!v)} style={{position:"absolute",right:13,padding:6}}>
+          <Text style={s.link}>{showPassword?t("auth.hide"):t("auth.show")}</Text>
+        </Pressable>
+      </View>
+    </View>
+
+    <View style={{gap:7}}>
+      <Text style={s.fieldLabel}>{t("auth.confirmPassword").toUpperCase()}</Text>
+      <TextInput value={confirm} onChangeText={v=>{setConfirm(v);setError("");setSuccess("")}} placeholder={t("auth.confirmPassword")} placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={s.input} onSubmitEditing={submit}/>
+    </View>
+
     {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
     {success?<Text accessibilityRole="alert" style={s.success}>{success}</Text>:null}
-    <Button loading={busy} onPress={submit}>CREATE MY ACCOUNT</Button>
+
+    <Button loading={busy} onPress={submit}>{t("auth.create").toUpperCase()}</Button>
     <Text style={s.helper}>Use an email address and phone number you can access.</Text>
   </AuthLayout>;
 }

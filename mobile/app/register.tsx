@@ -6,7 +6,9 @@ import {AuthLayout,authStyles as s} from "@/components/AuthLayout";
 import {supabase} from "@/lib/supabase";
 
 export default function Register(){
+  const [username,setUsername]=useState("");
   const [email,setEmail]=useState("");
+  const [phone,setPhone]=useState("");
   const [password,setPassword]=useState("");
   const [confirm,setConfirm]=useState("");
   const [showPassword,setShowPassword]=useState(false);
@@ -16,25 +18,33 @@ export default function Register(){
   const submit=async()=>{
     setError("");setSuccess("");
     if(!supabase){setError("App connection is not configured yet. Please contact the tournament team.");return}
+    if(username.trim().length<3){setError("Username must contain at least 3 characters.");return}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Enter a valid email address.");return}
+    if(!/^\+?[0-9\s()-]{8,20}$/.test(phone.trim())){setError("Enter a valid phone number.");return}
     if(password.length<8){setError("Your password must contain at least 8 characters.");return}
     if(password!==confirm){setError("Your passwords do not match.");return}
     setBusy(true);
     try{
-      const {data,error}=await supabase.auth.signUp({email:email.trim(),password});
+      const {data,error}=await supabase.auth.signUp({
+        email:email.trim(),
+        password,
+        options:{data:{username:username.trim(),phone_number:phone.trim()}}
+      });
       if(error){setError(error.message);return}
       if(data.session){router.replace("/(tabs)/account");return}
-      setSuccess("Your account has been created. Check your email for the confirmation link, then sign in.");
+      setSuccess("Account created. Email confirmation is still enabled for this Supabase project. Disable Confirm email in Supabase Authentication settings to enable instant sign-in.");
     }catch{setError("Something went wrong. Check your connection and try again.");}
     finally{setBusy(false)}
   };
   return <AuthLayout eyebrow="JOIN THE COMMUNITY" title="Create your player ID." description="Create one account to explore tournaments and manage your player profile." footer="Already registered?" footerAction="Sign in" onFooterPress={()=>router.replace("/login")}>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>EMAIL ADDRESS</Text><TextInput value={email} onChangeText={v=>{setEmail(v);setError("");setSuccess("")}} placeholder="you@example.com" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" style={s.input}/></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>PASSWORD</Text><View style={{position:"relative",justifyContent:"center"}}><TextInput value={password} onChangeText={v=>{setPassword(v);setError("");setSuccess("")}} placeholder="At least 8 characters" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" style={[s.input,{paddingRight:76}]}/><Pressable onPress={()=>setShowPassword(v=>!v)} style={{position:"absolute",right:13,padding:6}}><Text style={s.link}>{showPassword?"HIDE":"SHOW"}</Text></Pressable></View></View>
-    <View style={{gap:7}}><Text style={s.fieldLabel}>CONFIRM PASSWORD</Text><TextInput value={confirm} onChangeText={v=>{setConfirm(v);setError("");setSuccess("")}} placeholder="Enter your password again" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" style={s.input} onSubmitEditing={submit}/></View>
+    <View style={{gap:7}}><Text style={s.fieldLabel}>PLAYER USERNAME</Text><TextInput value={username} onChangeText={v=>{setUsername(v);setError("");setSuccess("")}} placeholder="Choose your player name" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} textContentType="username" autoComplete="username" style={s.input}/></View>
+    <View style={{gap:7}}><Text style={s.fieldLabel}>EMAIL ADDRESS</Text><TextInput value={email} onChangeText={v=>{setEmail(v);setError("");setSuccess("")}} placeholder="you@example.com" placeholderTextColor="#64748B" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" importantForAutofill="yes" style={s.input}/></View>
+    <View style={{gap:7}}><Text style={s.fieldLabel}>PHONE NUMBER</Text><TextInput value={phone} onChangeText={v=>{setPhone(v);setError("");setSuccess("")}} placeholder="+8801XXXXXXXXX" placeholderTextColor="#64748B" autoCapitalize="none" keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" style={s.input}/></View>
+    <View style={{gap:7}}><Text style={s.fieldLabel}>PASSWORD</Text><View style={{position:"relative",justifyContent:"center"}}><TextInput value={password} onChangeText={v=>{setPassword(v);setError("");setSuccess("")}} placeholder="At least 8 characters" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={[s.input,{paddingRight:76}]}/><Pressable onPress={()=>setShowPassword(v=>!v)} style={{position:"absolute",right:13,padding:6}}><Text style={s.link}>{showPassword?"HIDE":"SHOW"}</Text></Pressable></View></View>
+    <View style={{gap:7}}><Text style={s.fieldLabel}>CONFIRM PASSWORD</Text><TextInput value={confirm} onChangeText={v=>{setConfirm(v);setError("");setSuccess("")}} placeholder="Enter your password again" placeholderTextColor="#64748B" secureTextEntry={!showPassword} textContentType="newPassword" autoComplete="new-password" style={s.input} onSubmitEditing={submit}/></View>
     {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
     {success?<Text accessibilityRole="alert" style={s.success}>{success}</Text>:null}
     <Button loading={busy} onPress={submit}>CREATE MY ACCOUNT</Button>
-    <Text style={s.helper}>Use an email address you can access. Email verification may be required.</Text>
+    <Text style={s.helper}>Use an email address and phone number you can access.</Text>
   </AuthLayout>;
 }

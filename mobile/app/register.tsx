@@ -14,7 +14,7 @@ export default function Register(){
   if(!supabase){setError("App connection is not configured yet. Please contact the tournament team.");return}
   if(username.trim().length<3){setError("Username must contain at least 3 characters.");return}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Enter a valid email address.");return}
-  if(!/^\\+?[0-9\\s()-]{8,20}$/.test(phone.trim())){setError("Enter a valid phone number.");return}
+  if(!/^\+?[0-9\s()-]{8,20}$/.test(phone.trim())){setError("Enter a valid phone number.");return}
   if(password.length<8){setError("Your password must contain at least 8 characters.");return}
   if(password!==confirm){setError("Your passwords do not match.");return}
   setBusy(true);

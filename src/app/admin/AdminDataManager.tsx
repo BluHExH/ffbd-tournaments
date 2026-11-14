@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 
-type Field = { key: string; label: string; type?: "text" | "number" | "date" | "textarea" | "select"; required?: boolean; options?: string[] };
+type Field = { key: string; label: string; type?: "text" | "number" | "date" | "textarea" | "select" | "uuid"; required?: boolean; readOnly?: boolean; options?: string[] };
 type Row = Record<string, unknown> & { id?: string; key?: string };
 
 export function AdminDataManager({
@@ -63,6 +63,7 @@ export function AdminDataManager({
     for (const field of fields) {
       const raw = values[field.key];
       if (field.type === "number") payload[field.key] = raw === "" || raw == null ? 0 : Number(raw);
+      else if (field.type === "uuid") payload[field.key] = raw == null || String(raw).trim() === "" ? null : String(raw).trim();
       else if (field.type === "date") payload[field.key] = raw ? new Date(String(raw)).toISOString() : null;
       else payload[field.key] = raw ?? field.options?.[0] ?? "";
     }
@@ -127,10 +128,10 @@ export function AdminDataManager({
       <div className="mb-4 flex items-center justify-between"><h2 className="font-heading text-lg font-bold text-white">{editing ? "Edit record" : "Add record"}</h2><button type="button" onClick={() => setShowForm(false)} className="text-white/50"><X className="h-5 w-5"/></button></div>
       <div className="grid gap-4 sm:grid-cols-2">
         {fields.map(field => <label key={field.key} className={field.type === "textarea" ? "sm:col-span-2" : ""}><span className="mb-1.5 block text-xs text-white/55">{field.label}</span>
-          {field.key === "tournament_id" ? <select required={field.required} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}><option value="">Choose tournament</option>{tournamentOptions.map(t => <option key={t.id} value={t.id}>{t.uid} · {t.title}</option>)}</select>
+          {field.key === "tournament_id" ? <select disabled={field.readOnly} required={field.required} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}><option value="">Choose tournament</option>{tournamentOptions.map(t => <option key={t.id} value={t.id}>{t.uid} · {t.title}</option>)}</select>
           : field.type === "select" ? <select required={field.required} className={inputClass} value={String(values[field.key] ?? field.options?.[0] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}>{(field.options || []).map(o => <option key={o} value={o}>{o}</option>)}</select>
-          : field.type === "textarea" ? <textarea required={field.required} rows={3} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>
-          : <input required={field.required} type={field.type === "number" ? "number" : field.type === "date" ? "datetime-local" : "text"} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "any" : undefined} className={inputClass} value={String(values[field.key] ?? "").slice(0,16)} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>}
+          : field.type === "textarea" ? <textarea disabled={field.readOnly} required={field.required} rows={3} className={inputClass} value={String(values[field.key] ?? "")} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>
+          : <input disabled={field.readOnly} required={field.required} type={field.type === "number" ? "number" : field.type === "date" ? "datetime-local" : "text"} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "any" : undefined} className={inputClass} value={String(values[field.key] ?? "").slice(0,16)} onChange={e => setValues(v => ({...v,[field.key]:e.target.value}))}/>}
         </label>)}
       </div>
       <div className="mt-5 flex gap-2"><button disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#FF5C00] px-5 text-sm font-bold text-white disabled:opacity-50">{saving && <Loader2 className="h-4 w-4 animate-spin"/>}Save</button><button type="button" onClick={() => setShowForm(false)} className="h-10 rounded-lg border border-white/10 px-4 text-sm text-white/60">Cancel</button></div>

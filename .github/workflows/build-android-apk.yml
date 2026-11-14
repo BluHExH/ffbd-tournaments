@@ -2,6 +2,9 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/complete-player-wallet
 
 permissions:
   contents: write
@@ -13,6 +16,7 @@ concurrency:
 jobs:
   build-android-apk:
     name: Build Android APK
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]')
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -28,6 +32,34 @@ jobs:
       - name: Install mobile dependencies
         working-directory: mobile
         run: npm ci
+
+      - name: Validate mobile TypeScript
+        working-directory: mobile
+        run: npm run typecheck
+
+      - name: Generate padded Android launcher icon
+        run: |
+          python -m pip install --quiet Pillow
+          python - <<'PY'
+          from PIL import Image
+          source = Image.open("mobile/banglar-tournaments-app-icon.png").convert("RGBA")
+          canvas = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+          artwork = source.copy()
+          artwork.thumbnail((740, 740), Image.Resampling.LANCZOS)
+          canvas.alpha_composite(artwork, ((1024 - artwork.width) // 2, (1024 - artwork.height) // 2))
+          canvas.save("mobile/banglar-tournaments-app-icon-padded.png", optimize=True)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/banglar-tournaments-app-icon-padded.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate smaller Android launcher icon"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Validate Android Expo bundle
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir /tmp/banglar-expo-export
 
       - name: Build Android APK with EAS
         working-directory: mobile

@@ -9,6 +9,9 @@ import {
   Trophy,
   Users,
   CreditCard,
+  WalletCards,
+  Bell,
+  Images,
   Swords,
   Settings2,
   ShieldCheck,
@@ -26,10 +29,14 @@ const primaryLinks = [
 
 const managementLinks = [
   { href: "/admin/registrations", label: "Players & Registrations", icon: Users },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/players", label: "Player Accounts", icon: Users },
+  { href: "/admin/payments", label: "Tournament Payments", icon: CreditCard },
+  { href: "/admin/wallet", label: "Player Wallet", icon: WalletCards },
   { href: "/admin/matches", label: "Matches & Results", icon: Swords },
   { href: "/admin/settings", label: "Website Settings", icon: Settings2 },
   { href: "/admin/homepage-stats", label: "Homepage Stats", icon: Settings2 },
+  { href: "/admin/homepage-banners", label: "Homepage Banners", icon: Images },
+  { href: "/admin/notifications", label: "Player Notifications", icon: Bell },
   { href: "/admin/homepage-teams", label: "Homepage Teams", icon: Trophy },
   { href: "/admin/homepage-payouts", label: "Homepage Payouts", icon: CreditCard },
 ];

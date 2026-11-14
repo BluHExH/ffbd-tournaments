@@ -1,4 +1,5 @@
 name: Build Android APK
+# APK assets use a unique run-number filename.
 
 on:
   workflow_dispatch:

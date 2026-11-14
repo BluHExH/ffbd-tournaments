@@ -25,9 +25,9 @@
     ],
     "android": {
       "package": "com.banglartournaments.app",
-      "icon": "./banglar-tournaments-app-icon.png",
+      "icon": "./banglar-tournaments-app-icon-padded.png",
       "adaptiveIcon": {
-        "foregroundImage": "./banglar-tournaments-app-icon.png",
+        "foregroundImage": "./banglar-tournaments-app-icon-padded.png",
         "backgroundColor": "#07110B"
       }
     },

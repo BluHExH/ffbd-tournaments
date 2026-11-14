@@ -1,4 +1,4 @@
-import {useEffect,useState} from "react";
+﻿import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {Pressable,StyleSheet,Text,View} from "react-native";

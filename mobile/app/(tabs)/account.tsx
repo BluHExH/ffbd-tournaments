@@ -17,13 +17,13 @@ function MenuRow({item}:{item:MenuItem}){
  </Pressable>;
 }
 export default function Account(){
- const {t}=useLanguage();const [email,setEmail]=useState<string|null>(null);const [admin,setAdmin]=useState(false);
+ const {t}=useLanguage();const [email,setEmail]=useState<string|null>(null);const [username,setUsername]=useState<string|null>(null);const [admin,setAdmin]=useState(false);
  useEffect(()=>{
   if(!supabase)return;let active=true;
-  const load=async()=>{const {data}=await supabase!.auth.getUser();if(!active)return;setEmail(data.user?.email??null);if(data.user){const {data:row}=await supabase!.from("admins").select("id").eq("id",data.user.id).maybeSingle();if(active)setAdmin(Boolean(row))}else if(active)setAdmin(false)};
+  const load=async()=>{const {data}=await supabase!.auth.getUser();if(!active)return;setEmail(data.user?.email??null);if(data.user){const [{data:profile},{data:row}]=await Promise.all([supabase!.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle(),supabase!.from("admins").select("id").eq("id",data.user.id).maybeSingle()]);if(active){setUsername(profile?.username?.trim()||null);setAdmin(Boolean(row))}}else if(active){setUsername(null);setAdmin(false)}};
   void load();const {data:sub}=supabase.auth.onAuthStateChange(()=>{void load()});return()=>{active=false;sub.subscription.unsubscribe()};
  },[]);
- const logout=async()=>{await supabase?.auth.signOut();setEmail(null);setAdmin(false)};
+ const logout=async()=>{await supabase?.auth.signOut();setEmail(null);setUsername(null);setAdmin(false)};
  const groups:{title:string;items:MenuItem[]}[]=[
   {title:t("profile.walletPayments").toUpperCase(),items:[
    {label:t("nav.wallet"),icon:"wallet-outline",section:"wallet",description:t("profile.walletDesc")},
@@ -45,7 +45,7 @@ export default function Account(){
  ];
  return <Screen>
   <Muted>{t("profile.playerAccount").toUpperCase()}</Muted><Heading>{t("profile.title")}</Heading>
-  <Card><View style={styles.profileTop}><View style={styles.avatar}><Ionicons name="person" size={27} color={theme.accent}/></View><View style={styles.profileCopy}><Subheading>{email?t("profile.signedIn"):t("profile.welcome")}</Subheading><Muted>{email??t("profile.signInHint")}</Muted></View></View>
+  <Card><View style={styles.profileTop}><View style={styles.avatar}><Ionicons name="person" size={27} color={theme.accent}/></View><View style={styles.profileCopy}><Subheading>{email?(username??"Username not set"):t("profile.welcome")}</Subheading><Muted>{email??t("profile.signInHint")}</Muted></View></View>
    {email?<View style={styles.accountActions}>{admin?<Button onPress={()=>router.push("/admin")}>{t("profile.admin")}</Button>:null}<Button onPress={logout}>{t("profile.signOut")}</Button></View>:<View style={styles.accountActions}><Button onPress={()=>router.push("/login")}>{t("profile.login")}</Button><Button onPress={()=>router.push("/register")}>{t("profile.create")}</Button></View>}
   </Card>
   <Card><LanguageSwitcher/></Card>

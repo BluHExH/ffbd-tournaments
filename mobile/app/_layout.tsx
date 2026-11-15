@@ -42,6 +42,7 @@ export default function RootLayout(){
     <Stack.Screen name="register"/>
     <Stack.Screen name="forgot-password"/>
     <Stack.Screen name="admin"/>
+    <Stack.Screen name="portal"/>
    </Stack>
   </AuthGate>
  </SafeAreaProvider></LanguageProvider>;

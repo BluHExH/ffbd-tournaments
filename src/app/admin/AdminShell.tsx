@@ -3,8 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Trophy,
@@ -44,19 +43,7 @@ const managementLinks = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Mobile navigation is off-canvas and not visible to Next's viewport
-  // prefetch observer until opened. Warm the admin routes as soon as it opens.
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const routes = [
-      ...primaryLinks.map((item) => item.href),
-      ...managementLinks.map((item) => item.href),
-    ];
-    routes.forEach((href) => router.prefetch(href));
-  }, [mobileOpen, router]);
 
   if (pathname === "/admin/login" || pathname === "/admin/mfa") {
     return <>{children}</>;

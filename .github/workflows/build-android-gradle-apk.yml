@@ -109,10 +109,19 @@ jobs:
 
           """
           text = text.replace("    buildTypes {", signing + "    buildTypes {", 1)
-          match = re.search(r"(release\\s*\\{[\\s\\S]*?signingConfig\\s+)signingConfigs\\.debug", text)
-          if not match:
-              raise SystemExit("Could not locate release signingConfig in generated Gradle file; refusing an unsigned/debug-signed release.")
-          text = text[:match.start()] + match.group(1) + "signingConfigs.release" + text[match.end():]
+          build_types = text.find("    buildTypes {")
+          if build_types < 0:
+              raise SystemExit("Could not locate buildTypes in generated Gradle file.")
+          before, after = text[:build_types], text[build_types:]
+          after, replacements = re.subn(
+              r"(release\\s*\\{[\\s\\S]*?signingConfig\\s+)signingConfigs\\.debug",
+              r"\\1signingConfigs.release",
+              after,
+              count=1,
+          )
+          if replacements != 1:
+              raise SystemExit("Could not configure release signing in generated Gradle file; refusing an unsigned/debug-signed release.")
+          text = before + after
           path.write_text(text)
           PY
 

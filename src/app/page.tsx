@@ -8,14 +8,15 @@ import Footer from "@/components/Footer";
 import TournamentCard from "@/components/TournamentCard";
 import StatCounter from "@/components/StatCounter";
 import SectionHeading from "@/components/SectionHeading";
+import TeamCard from "@/components/TeamCard";
 import LiveBadge from "@/components/LiveBadge";
 import FAQAccordion from "@/components/FAQAccordion";
 import PrizeBadge from "@/components/PrizeBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useLanguage } from "@/context/LanguageContext";
-import { sponsors, winners as seedWinners, stats as seedStats } from "@/data/seed";
+import { sponsors, teams as seedTeams, winners as seedWinners, stats as seedStats } from "@/data/seed";
 import { createClient } from "@/lib/supabase/client";
-import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
+import { mapRowToTournament, type TournamentRow, type Tournament, type Team } from "@/types/tournament";
 import { formatBDT, formatNumber } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 
@@ -25,6 +26,7 @@ type HomepagePayout = { id: string; name: string; team: string | null; amount: n
 export default function HomePage() {
   const { t, lang } = useLanguage();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [teams, setTeams] = useState<Team[]>(seedTeams);
   const [homepageStats, setHomepageStats] = useState<HomepageStats | null>(null);
   const [winners, setWinners] = useState<HomepagePayout[]>(seedWinners.map((winner) => ({ ...winner, team: winner.team ?? null })));
 
@@ -34,14 +36,17 @@ export default function HomePage() {
     Promise.all([
       supabase.from("tournaments").select("*").order("start_at", { ascending: true }),
       supabase.from("homepage_stats").select("*").eq("key", "main").maybeSingle(),
+      supabase.from("homepage_teams").select("*").order("rank", { ascending: true }),
       supabase.from("homepage_payouts").select("*").order("date", { ascending: false }),
-    ]).then(([tournamentResult, statsResult, payoutsResult]) => {
+    ]).then(([tournamentResult, statsResult, teamsResult, payoutsResult]) => {
       if (!active) return;
       setTournaments((tournamentResult.data ?? []).map((row) => mapRowToTournament(row as TournamentRow)));
       if (!statsResult.error && statsResult.data) setHomepageStats(statsResult.data as HomepageStats);
+      if (!teamsResult.error) setTeams((teamsResult.data ?? []) as Team[]);
       if (!payoutsResult.error) setWinners((payoutsResult.data ?? []) as HomepagePayout[]);
       if (tournamentResult.error) console.error("Homepage tournaments load failed:", tournamentResult.error.message);
       if (statsResult.error) console.error("Homepage stats load failed:", statsResult.error.message);
+      if (teamsResult.error) console.error("Homepage teams load failed:", teamsResult.error.message);
       if (payoutsResult.error) console.error("Homepage payouts load failed:", payoutsResult.error.message);
     });
     return () => { active = false; };
@@ -141,6 +146,17 @@ export default function HomePage() {
                   <h3 className="font-heading text-lg font-bold text-[#0F172A] relative z-10">{step.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed relative z-10">{step.desc}</p>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Teams — cards retained without the Top Teams heading */}
+        <section className="section-white py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+              {teams.map((team) => (
+                <TeamCard key={team.id} team={team} />
               ))}
             </div>
           </div>

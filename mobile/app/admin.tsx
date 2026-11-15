@@ -105,14 +105,6 @@ export default function Admin() {
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}
-            onHttpError={(event) => {
-              // Ignore failed analytics/images and only show the retry screen
-              // when the actual Admin document fails on the server.
-              if (event.nativeEvent.isForMainFrame && event.nativeEvent.statusCode >= 500) {
-                setLoading(false);
-                setError(true);
-              }
-            }}
             startInLoadingState
           />
           {loading && (

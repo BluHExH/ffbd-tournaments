@@ -15,7 +15,7 @@ export default function Login(){
   if(!email.trim()||!password){setError("Enter your email address and password.");return}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Enter a valid email address.");return}
   setBusy(true);
-  try{const {data,error}=await supabase.auth.signInWithPassword({email:email.trim(),password});if(error){setError(error.message==="Invalid login credentials"?"Email or password is incorrect. Please try again.":error.message);return}const userId=data.user?.id;if(userId){const {data:admin}=await supabase.from("admins").select("id").eq("id",userId).maybeSingle();router.replace(admin?"/portal":"/(tabs)")}else{router.replace("/(tabs)")}}
+  try{const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});if(error){setError(error.message==="Invalid login credentials"?"Email or password is incorrect. Please try again.":error.message);return}}
   catch{setError("Something went wrong. Check your connection and try again.");}
   finally{setBusy(false)}
  };

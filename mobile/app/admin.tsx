@@ -1,15 +1,65 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { WebView } from "react-native-webview";
+import { supabase } from "@/lib/supabase";
 import { theme } from "@/lib/theme";
 
-const ADMIN_URL = "https://ffbd-tournaments.vercel.app/admin";
+const ADMIN_ORIGIN = "https://ffbd-tournaments.vercel.app";
+const ADMIN_URL = `${ADMIN_ORIGIN}/admin`;
 
 export default function Admin() {
+  const [authorized, setAuthorized] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    const verifyNativeAdmin = async () => {
+      if (!supabase) {
+        router.replace("/login");
+        return;
+      }
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        router.replace("/login");
+        return;
+      }
+
+      const { data: admin, error: adminError } = await supabase
+        .from("admins")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (adminError || !admin) {
+        router.replace("/(tabs)");
+        return;
+      }
+
+      setAuthorized(true);
+      setCheckingAccess(false);
+    };
+
+    void verifyNativeAdmin();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (checkingAccess || !authorized) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={theme.accent} />
+        <Text style={styles.loadingText}>Verifying administrator access…</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
@@ -44,7 +94,11 @@ export default function Admin() {
             sharedCookiesEnabled
             thirdPartyCookiesEnabled
             allowsBackForwardNavigationGestures
-            originWhitelist={["https://*"]}
+            originWhitelist={[ADMIN_ORIGIN]}
+            onShouldStartLoadWithRequest={(request) =>
+              request.url === ADMIN_ORIGIN ||
+              request.url.startsWith(`${ADMIN_ORIGIN}/`)
+            }
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}

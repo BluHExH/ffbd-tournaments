@@ -284,7 +284,6 @@ export default function ResetPassword() {
             VERIFY CODE
           </Button>
           <Button
-            variant="secondary"
             loading={busy}
             disabled={busy || verifying}
             onPress={resendCode}

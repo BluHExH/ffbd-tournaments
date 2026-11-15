@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.accent, fontSize: 10, fontWeight: "900", letterSpacing: 2 },
   title: { color: theme.text, fontSize: 27, fontWeight: "900", marginTop: 8 },
   subtitle: { color: theme.muted, fontSize: 13, marginTop: 6 },
-  option: { minHeight: 94, borderRadius: 18, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card, padding: 16, flexDirection: "row", alignItems: "center", gap: 13 },
+  option: { minHeight: 94, borderRadius: 18, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, padding: 16, flexDirection: "row", alignItems: "center", gap: 13 },
   adminOption: { borderColor: "rgba(255,92,0,.4)" },
   optionIcon: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,.055)" },
   optionCopy: { flex: 1, gap: 5 },

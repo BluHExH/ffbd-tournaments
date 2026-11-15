@@ -1,6 +1,5 @@
 import {useState} from "react";
 import {Text,TextInput,View} from "react-native";
-import * as ExpoLinking from "expo-linking";
 import {router} from "expo-router";
 import {Button} from "@/components/UI";
 import {AuthLayout,authStyles as s} from "@/components/AuthLayout";
@@ -15,7 +14,7 @@ export default function ForgotPassword(){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Enter the email address linked to your account.");return}
   setBusy(true);
   try{
-   const redirectTo=ExpoLinking.createURL("reset-password");
+   const redirectTo="banglartournaments://reset-password";
    const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo});
    if(error){setError(error.message);return}
    setSuccess("If an account exists for this email, a reset link has been sent. Open the link on this device, then choose a new password.");

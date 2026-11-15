@@ -6,46 +6,46 @@ import { AuthLayout, authStyles as s } from "@/components/AuthLayout";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/lib/i18n";
 
-/**
- * Redirect through the website bridge so Android receives query params.
- * Direct custom-scheme links often lose #access_token fragments.
- */
-const RECOVERY_REDIRECT =
-  "https://ffbd-tournaments.vercel.app/auth/mobile-reset";
-
 export default function ForgotPassword() {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const submit = async () => {
     setError("");
-    setSuccess("");
+    const normalizedEmail = email.trim().toLowerCase();
+
     if (!supabase) {
       setError("App connection is not configured.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Enter the email address linked to your account.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
       return;
     }
+
     setBusy(true);
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        { redirectTo: RECOVERY_REDIRECT }
-      );
+      const { error: resetError } =
+        await supabase.auth.resetPasswordForEmail(normalizedEmail);
+
       if (resetError) {
-        setError(resetError.message);
+        setError(
+          resetError.message.toLowerCase().includes("rate limit")
+            ? "Please wait before requesting another code."
+            : "Unable to send a verification code right now. Please try again."
+        );
         return;
       }
-      setSuccess(
-        "If an account exists for this email, a reset link has been sent. Open the latest email on this device, then choose a new password."
-      );
+
+      // Keep the response generic to avoid revealing whether an email is registered.
+      router.push({
+        pathname: "/reset-password",
+        params: { email: normalizedEmail },
+      });
     } catch {
-      setError("Unable to send the reset email right now. Please try again.");
+      setError("Unable to send a verification code right now. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
     <AuthLayout
       eyebrow="ACCOUNT RECOVERY"
       title="Forgot your password?"
-      description="Enter the email address linked to your player account."
+      description="Enter the email address linked to your player account. We will send a 6-digit verification code."
       footer="Remembered your password?"
       footerAction={t("auth.login")}
       onFooterPress={() => router.replace("/login")}
@@ -64,10 +64,9 @@ export default function ForgotPassword() {
         <Text style={s.fieldLabel}>{t("auth.email").toUpperCase()}</Text>
         <TextInput
           value={email}
-          onChangeText={(v) => {
-            setEmail(v);
+          onChangeText={(value) => {
+            setEmail(value);
             setError("");
-            setSuccess("");
           }}
           placeholder={t("auth.emailPlaceholder")}
           placeholderTextColor="#64748B"
@@ -77,7 +76,9 @@ export default function ForgotPassword() {
           textContentType="emailAddress"
           autoComplete="email"
           style={s.input}
+          editable={!busy}
           onSubmitEditing={submit}
+          returnKeyType="send"
         />
       </View>
       {error ? (
@@ -85,13 +86,8 @@ export default function ForgotPassword() {
           {error}
         </Text>
       ) : null}
-      {success ? (
-        <Text accessibilityRole="alert" style={s.success}>
-          {success}
-        </Text>
-      ) : null}
       <Button loading={busy} disabled={busy} onPress={submit}>
-        SEND RESET LINK
+        SEND VERIFICATION CODE
       </Button>
     </AuthLayout>
   );

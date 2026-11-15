@@ -105,6 +105,14 @@ export default function Admin() {
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}
+            onHttpError={(event) => {
+              const failedUrl = event.nativeEvent.url;
+              const isAdminDocument = failedUrl === ADMIN_URL || failedUrl.startsWith(`${ADMIN_URL}/`);
+              if (isAdminDocument && event.nativeEvent.statusCode >= 500) {
+                setLoading(false);
+                setError(true);
+              }
+            }}
             startInLoadingState
           />
           {loading && (

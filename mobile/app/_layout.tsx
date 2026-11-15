@@ -1,10 +1,20 @@
 import {useEffect,useState,type PropsWithChildren} from "react";
+import {ActivityIndicator,Image,StyleSheet,Text,View} from "react-native";
 import {Stack,useRouter,useSegments} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {theme} from "@/lib/theme";
 import {supabase} from "@/lib/supabase";
 import {LanguageProvider} from "@/lib/i18n";
+
+function StartupScreen(){
+ return <View style={styles.startup}>
+  <Image source={require("../banglar-tournaments-app-icon.png")} style={styles.logo} resizeMode="contain"/>
+  <Text style={styles.brand}>BANGLAR <Text style={styles.accent}>TOURNAMENTS</Text></Text>
+  <ActivityIndicator size="small" color={theme.accent} style={styles.spinner}/>
+  <Text style={styles.caption}>GETTING THINGS READY…</Text>
+ </View>;
+}
 
 function AuthGate({children}:PropsWithChildren){
  const [hasSession,setHasSession]=useState<boolean|null>(null);
@@ -21,9 +31,10 @@ function AuthGate({children}:PropsWithChildren){
   if(hasSession===null)return;
   let active=true;
   const first=segments[0] as string|undefined;
-  const authRoute=first==="login"||first==="register"||first==="forgot-password";
+  const recoveryRoute=first==="reset-password";
+  const authRoute=first==="login"||first==="register"||first==="forgot-password"||recoveryRoute;
   const routeUser=async()=>{
-   if(hasSession&&(!first||first==="index"||authRoute)){
+   if(hasSession&&(!first||first==="index"||authRoute)&&!recoveryRoute){
     if(first==="login"&&supabase){
      const {data:{user}}=await supabase.auth.getUser();
      if(!active)return;
@@ -42,10 +53,11 @@ function AuthGate({children}:PropsWithChildren){
   void routeUser();
   return()=>{active=false};
  },[hasSession,segments,router]);
- if(hasSession===null)return null;
+ if(hasSession===null)return <StartupScreen/>;
  const first=segments[0] as string|undefined;
- const authRoute=first==="login"||first==="register"||first==="forgot-password";
- if((hasSession&&authRoute)||(!hasSession&&!authRoute))return null;
+ const recoveryRoute=first==="reset-password";
+ const authRoute=first==="login"||first==="register"||first==="forgot-password"||recoveryRoute;
+ if((hasSession&&authRoute&&!recoveryRoute)||(!hasSession&&!authRoute))return <StartupScreen/>;
  return <>{children}</>;
 }
 
@@ -59,9 +71,19 @@ export default function RootLayout(){
     <Stack.Screen name="login"/>
     <Stack.Screen name="register"/>
     <Stack.Screen name="forgot-password"/>
+    <Stack.Screen name="reset-password"/>
     <Stack.Screen name="admin"/>
     <Stack.Screen name="portal"/>
    </Stack>
   </AuthGate>
  </SafeAreaProvider></LanguageProvider>;
 }
+
+const styles=StyleSheet.create({
+ startup:{flex:1,backgroundColor:"#07110B",alignItems:"center",justifyContent:"center"},
+ logo:{width:116,height:116,marginBottom:18},
+ brand:{color:"#FFFFFF",fontSize:17,fontWeight:"900",letterSpacing:1.2},
+ accent:{color:theme.accent},
+ spinner:{marginTop:34},
+ caption:{marginTop:12,color:"rgba(255,255,255,.42)",fontSize:9,fontWeight:"800",letterSpacing:2}
+});

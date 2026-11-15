@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Trophy,
@@ -43,7 +44,19 @@ const managementLinks = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Mobile navigation is off-canvas and not visible to Next's viewport
+  // prefetch observer until opened. Warm the admin routes as soon as it opens.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const routes = [
+      ...primaryLinks.map((item) => item.href),
+      ...managementLinks.map((item) => item.href),
+    ];
+    routes.forEach((href) => router.prefetch(href));
+  }, [mobileOpen, router]);
 
   if (pathname === "/admin/login" || pathname === "/admin/mfa") {
     return <>{children}</>;
@@ -82,6 +95,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 : pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
+                  prefetch={true}
                   key={href}
                   href={href}
                   onClick={() => setMobileOpen(false)}
@@ -107,7 +121,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="space-y-1">
             {managementLinks.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
-              return <Link key={href} href={href} onClick={() => setMobileOpen(false)}
+              return <Link prefetch={true} key={href} href={href} onClick={() => setMobileOpen(false)}
                 className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all ${active ? "border border-[#FF5C00]/25 bg-[#FF5C00]/10 text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white"}`}>
                 <Icon className={`h-[18px] w-[18px] ${active ? "text-[#FF7130]" : "text-white/40 group-hover:text-white/80"}`} />
                 <span>{label}</span>

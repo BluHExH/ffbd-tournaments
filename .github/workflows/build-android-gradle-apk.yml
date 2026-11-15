@@ -113,14 +113,11 @@ jobs:
           if build_types < 0:
               raise SystemExit("Could not locate buildTypes in generated Gradle file.")
           before, after = text[:build_types], text[build_types:]
-          after, replacements = re.subn(
-              r"(release\\s*\\{[\\s\\S]*?signingConfig\\s+)signingConfigs\\.debug",
-              r"\\1signingConfigs.release",
-              after,
-              count=1,
-          )
-          if replacements != 1:
+          release_start = after.find("release {")
+          debug_signing = after.find("signingConfig signingConfigs.debug", release_start)
+          if release_start < 0 or debug_signing < 0:
               raise SystemExit("Could not configure release signing in generated Gradle file; refusing an unsigned/debug-signed release.")
+          after = after[:debug_signing] + "signingConfig signingConfigs.release" + after[debug_signing + len("signingConfig signingConfigs.debug"):]
           text = before + after
           path.write_text(text)
           PY

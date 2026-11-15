@@ -105,7 +105,7 @@ export default function Account(){
     <Muted>Mobile Supabase setup is required before account features can be used.</Muted>
    :email?
     <View style={styles.accountActions}>
-     {admin?<Button onPress={()=>router.push("/admin")}>{t("profile.admin")}</Button>:null}
+     {admin?<Button onPress={()=>router.push("/portal")}>Switch Dashboard</Button>:null}
      <Button onPress={logout}>{t("profile.signOut")}</Button>
     </View>
    :

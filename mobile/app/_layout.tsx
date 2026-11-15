@@ -19,10 +19,28 @@ function AuthGate({children}:PropsWithChildren){
  },[]);
  useEffect(()=>{
   if(hasSession===null)return;
+  let active=true;
   const first=segments[0] as string|undefined;
   const authRoute=first==="login"||first==="register"||first==="forgot-password";
-  if(hasSession&&(!first||first==="index"||authRoute)){router.replace("/(tabs)");return}
-  if(!hasSession&&!authRoute)router.replace("/login");
+  const routeUser=async()=>{
+   if(hasSession&&(!first||first==="index"||authRoute)){
+    if(first==="login"&&supabase){
+     const {data:{user}}=await supabase.auth.getUser();
+     if(!active)return;
+     if(user){
+      const {data:admin}=await supabase.from("admins").select("id").eq("id",user.id).maybeSingle();
+      if(!active)return;
+      router.replace(admin?"/portal":"/(tabs)");
+      return;
+     }
+    }
+    router.replace("/(tabs)");
+    return;
+   }
+   if(!hasSession&&!authRoute)router.replace("/login");
+  };
+  void routeUser();
+  return()=>{active=false};
  },[hasSession,segments,router]);
  if(hasSession===null)return null;
  const first=segments[0] as string|undefined;

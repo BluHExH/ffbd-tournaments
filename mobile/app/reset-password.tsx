@@ -7,7 +7,7 @@ import {supabase} from "@/lib/supabase";
 import {theme} from "@/lib/theme";
 
 export default function ResetPassword(){
- const [ready,setReady]=useState(false);const [busy,setBusy]=useState(false);
+ const [ready,setReady]=useState(false);const [linkValid,setLinkValid]=useState(false);const [busy,setBusy]=useState(false);
  const [password,setPassword]=useState("");const [confirm,setConfirm]=useState("");
  const [error,setError]=useState("");const [success,setSuccess]=useState("");
  useEffect(()=>{
@@ -32,7 +32,7 @@ export default function ResetPassword(){
     }else{
      throw new Error("This password reset link is invalid or expired. Request a new link.");
     }
-    if(active)setReady(true);
+    if(active){setLinkValid(true);setReady(true)}
    }catch(cause){
     if(active){setError(cause instanceof Error?cause.message:"Could not verify the reset link.");setReady(true);}
    }
@@ -57,11 +57,14 @@ export default function ResetPassword(){
  };
  if(!ready)return <View style={{flex:1,backgroundColor:"#0B1221",alignItems:"center",justifyContent:"center"}}><ActivityIndicator color={theme.accent}/><Text style={{color:"#94A3B8",marginTop:12}}>Verifying reset link…</Text></View>;
  return <AuthLayout eyebrow="ACCOUNT RECOVERY" title="Set a new password" description="Choose a new password for your BANGLAR TOURNAMENTS account." footer="Remembered your password?" footerAction="Back to login" onFooterPress={()=>router.replace("/login")}>
-  {success?<><Text accessibilityRole="alert" style={s.success}>{success}</Text><Button onPress={()=>router.replace("/login")}>GO TO LOGIN</Button></>:<>
-   <View style={{gap:7}}><Text style={s.fieldLabel}>NEW PASSWORD</Text><TextInput value={password} onChangeText={setPassword} placeholder="At least 8 characters" placeholderTextColor="#64748B" secureTextEntry autoComplete="new-password" textContentType="newPassword" style={s.input}/></View>
-   <View style={{gap:7}}><Text style={s.fieldLabel}>CONFIRM NEW PASSWORD</Text><TextInput value={confirm} onChangeText={setConfirm} placeholder="Enter password again" placeholderTextColor="#64748B" secureTextEntry autoComplete="new-password" textContentType="newPassword" style={s.input}/></View>
+  {success?<><Text accessibilityRole="alert" style={s.success}>{success}</Text><Button onPress={()=>router.replace("/login")}>GO TO LOGIN</Button></>:linkValid?<>
+   <View style={{gap:7}}><Text style={s.fieldLabel}>NEW PASSWORD</Text><TextInput value={password} onChangeText={v=>{setPassword(v);setError("")}} placeholder="At least 8 characters" placeholderTextColor="#64748B" secureTextEntry autoComplete="new-password" textContentType="newPassword" style={s.input}/></View>
+   <View style={{gap:7}}><Text style={s.fieldLabel}>CONFIRM NEW PASSWORD</Text><TextInput value={confirm} onChangeText={v=>{setConfirm(v);setError("")}} placeholder="Enter password again" placeholderTextColor="#64748B" secureTextEntry autoComplete="new-password" textContentType="newPassword" style={s.input}/></View>
    {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
-   <Button loading={busy} disabled={busy||Boolean(error)} onPress={submit}>UPDATE PASSWORD</Button>
+   <Button loading={busy} disabled={busy} onPress={submit}>UPDATE PASSWORD</Button>
+  </>:<>
+   <Text accessibilityRole="alert" style={s.error}>{error||"Open the password reset link from your email on this device."}</Text>
+   <Button onPress={()=>router.replace("/forgot-password")}>REQUEST NEW RESET LINK</Button>
   </>}
  </AuthLayout>;
 }

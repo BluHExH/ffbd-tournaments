@@ -93,6 +93,9 @@ export default function Admin() {
             domStorageEnabled
             sharedCookiesEnabled
             thirdPartyCookiesEnabled
+            cacheEnabled
+            cacheMode="LOAD_DEFAULT"
+            setSupportMultipleWindows={false}
             allowsBackForwardNavigationGestures
             originWhitelist={[ADMIN_ORIGIN]}
             onShouldStartLoadWithRequest={(request) =>
@@ -103,7 +106,9 @@ export default function Admin() {
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}
             onHttpError={(event) => {
-              if (event.nativeEvent.statusCode >= 500) {
+              // Ignore failed analytics/images and only show the retry screen
+              // when the actual Admin document fails on the server.
+              if (event.nativeEvent.isForMainFrame && event.nativeEvent.statusCode >= 500) {
                 setLoading(false);
                 setError(true);
               }

@@ -46,7 +46,7 @@ export default function Account(){
  return <Screen>
   <Muted>{t("profile.playerAccount").toUpperCase()}</Muted><Heading>{t("profile.title")}</Heading>
   <Card><View style={styles.profileTop}><View style={styles.avatar}><Ionicons name="person" size={27} color={theme.accent}/></View><View style={styles.profileCopy}><Subheading>{email?(username??"Username not set"):t("profile.welcome")}</Subheading><Muted>{email??t("profile.signInHint")}</Muted></View></View>
-   {email?<View style={styles.accountActions}>{admin?<Button onPress={()=>router.push("/admin")}>{t("profile.admin")}</Button>:null}<Button onPress={logout}>{t("profile.signOut")}</Button></View>:<View style={styles.accountActions}><Button onPress={()=>router.push("/login")}>{t("profile.login")}</Button><Button onPress={()=>router.push("/register")}>{t("profile.create")}</Button></View>}
+   {email?<View style={styles.accountActions}>{admin?<Button onPress={()=>router.push("/portal")}>Switch Dashboard</Button>:null}<Button onPress={logout}>{t("profile.signOut")}</Button></View>:<View style={styles.accountActions}><Button onPress={()=>router.push("/login")}>{t("profile.login")}</Button><Button onPress={()=>router.push("/register")}>{t("profile.create")}</Button></View>}
   </Card>
   <Card><LanguageSwitcher/></Card>
   {groups.map(group=><View key={group.title} style={styles.group}><Text style={styles.groupTitle}>{group.title}</Text><Card>{group.items.map(item=><MenuRow key={item.label} item={item}/>)}</Card></View>)}

@@ -1,46 +1,65 @@
 import {useEffect,useState} from "react";
 import {ActivityIndicator,Linking,Text,TextInput,View} from "react-native";
-import {router} from "expo-router";
+import {router,useLocalSearchParams} from "expo-router";
 import {Button} from "@/components/UI";
 import {AuthLayout,authStyles as s} from "@/components/AuthLayout";
 import {supabase} from "@/lib/supabase";
 import {theme} from "@/lib/theme";
 
 export default function ResetPassword(){
+ const params=useLocalSearchParams<{code?:string;access_token?:string;refresh_token?:string;type?:string;token_hash?:string}>();
+ const routeCode=typeof params.code==="string"?params.code:undefined;
+ const routeAccessToken=typeof params.access_token==="string"?params.access_token:undefined;
+ const routeRefreshToken=typeof params.refresh_token==="string"?params.refresh_token:undefined;
+ const routeType=typeof params.type==="string"?params.type:undefined;
+ const routeTokenHash=typeof params.token_hash==="string"?params.token_hash:undefined;
  const [ready,setReady]=useState(false);const [linkValid,setLinkValid]=useState(false);const [busy,setBusy]=useState(false);
  const [password,setPassword]=useState("");const [confirm,setConfirm]=useState("");
  const [error,setError]=useState("");const [success,setSuccess]=useState("");
  useEffect(()=>{
-  let active=true;
+  let active=true;let verified=false;
   const acceptLink=async(url:string|null)=>{
    if(!supabase){if(active){setError("App connection is not configured.");setReady(true)}return}
-   if(!url){if(active){setError("No reset link was received. Request a new password reset email.");setReady(true)}return}
-   try{
-    const parsed=new URL(url);
-    const query=parsed.searchParams;
-    const hash=new URLSearchParams(parsed.hash.replace(/^#/,""));
-    const code=query.get("code");
-    const accessToken=hash.get("access_token")||query.get("access_token");
-    const refreshToken=hash.get("refresh_token")||query.get("refresh_token");
-    const type=hash.get("type")||query.get("type");
-    if(code){
-     const {error}=await supabase.auth.exchangeCodeForSession(code);
-     if(error)throw error;
-    }else if(accessToken&&refreshToken&&type==="recovery"){
-     const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
-     if(error)throw error;
-    }else{
-     throw new Error("This password reset link is invalid or expired. Request a new link.");
+   let code=routeCode,accessToken=routeAccessToken,refreshToken=routeRefreshToken,type=routeType,tokenHash=routeTokenHash;
+   if(url){
+    try{
+     const parsed=new URL(url);
+     const query=parsed.searchParams;
+     const hash=new URLSearchParams(parsed.hash.replace(/^#/,""));
+     code=query.get("code")||code;
+     accessToken=hash.get("access_token")||query.get("access_token")||accessToken;
+     refreshToken=hash.get("refresh_token")||query.get("refresh_token")||refreshToken;
+     type=hash.get("type")||query.get("type")||type;
+     tokenHash=query.get("token_hash")||hash.get("token_hash")||tokenHash;
+    }catch{
+     if(active){setError("The reset link could not be read. Request a new password reset email.");setReady(true)}
+     return;
     }
-    if(active){setLinkValid(true);setReady(true)}
+   }
+   if(!code&&!(accessToken&&refreshToken&&type==="recovery")&&!(tokenHash&&type==="recovery")){
+    if(active&&!verified){setError("No reset link was received. Open the latest reset email link again, or request a new password reset email.");setReady(true)}
+    return;
+   }
+   try{
+    let authError:null|{message:string}=null;
+    if(code){
+     const result=await supabase.auth.exchangeCodeForSession(code);authError=result.error;
+    }else if(accessToken&&refreshToken&&type==="recovery"){
+     const result=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});authError=result.error;
+    }else if(tokenHash&&type==="recovery"){
+     const result=await supabase.auth.verifyOtp({token_hash:tokenHash,type:"recovery"});authError=result.error;
+    }
+    if(authError)throw authError;
+    verified=true;
+    if(active){setLinkValid(true);setReady(true);setError("")}
    }catch(cause){
-    if(active){setError(cause instanceof Error?cause.message:"Could not verify the reset link.");setReady(true);}
+    if(active){setError(cause instanceof Error?cause.message:"Could not verify the reset link. Request a new link.");setReady(true)}
    }
   };
-  void Linking.getInitialURL().then(acceptLink);
+  void Linking.getInitialURL().then(acceptLink).catch(()=>acceptLink(null));
   const subscription=Linking.addEventListener("url",event=>{void acceptLink(event.url)});
   return()=>{active=false;subscription.remove()};
- },[]);
+ },[routeCode,routeAccessToken,routeRefreshToken,routeType,routeTokenHash]);
  const submit=async()=>{
   setError("");setSuccess("");
   if(!supabase){setError("App connection is not configured.");return}

@@ -34,12 +34,12 @@ function StartupScreen() {
 
 function isRecoveryUrl(url: string | null | undefined): boolean {
   if (!url) return false;
+  const value = url.toLowerCase();
   return (
-    url.includes("reset-password") ||
-    url.includes("type=recovery") ||
-    url.includes("token_hash=") ||
-    url.includes("access_token=") ||
-    url.includes("code=")
+    value.includes("reset-password") ||
+    value.includes("type=recovery") ||
+    value.includes("token_hash=") ||
+    value.includes("access_token=")
   );
 }
 
@@ -48,16 +48,18 @@ function AuthGate({ children }: PropsWithChildren) {
   const router = useRouter();
   const segments = useSegments();
 
-  // Capture deep links as early as possible (cold start + warm)
+  // Capture recovery links before navigation (cold start + warm app).
   useEffect(() => {
     let active = true;
 
     const handle = (url: string | null) => {
-      if (!url || !active) return;
-      if (isRecoveryUrl(url)) {
+      if (!url || !active || !isRecoveryUrl(url)) return;
+      // The reset screen also listens for warm links. Keep a pending URL only
+      // when navigating to that screen from somewhere else.
+      if ((segments[0] as string | undefined) !== "reset-password") {
         setPendingRecoveryUrl(url);
-        router.replace("/reset-password");
       }
+      router.replace("/reset-password");
     };
 
     const sub = Linking.addEventListener("url", (e) => handle(e.url));
@@ -69,7 +71,7 @@ function AuthGate({ children }: PropsWithChildren) {
       active = false;
       sub.remove();
     };
-  }, [router]);
+  }, [router, segments]);
 
   useEffect(() => {
     if (!supabase) {

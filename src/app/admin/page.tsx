@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
     { label: "Total tournaments", value: String(totalResult.count ?? 0), icon: Trophy, detail: "All records" },
     { label: "Live tournaments", value: String(liveResult.count ?? 0), icon: Activity, detail: "Currently running", live: true },
     { label: "Upcoming", value: String(upcomingResult.count ?? 0), icon: CalendarDays, detail: "Scheduled events" },
-    { label: "Total prize pool", value: formatBDT(totalPrize), icon: Users, detail: "Across all tournaments" },
+    { label: "Total prize pool", value: formatBDT(totalPrize), icon: Users, detail: "Across all tournaments" },\n    { label: "Registered users", value: String(userMetrics?.total_users ?? "—"), icon: Users, detail: "All platform accounts" },\n    { label: "Active now", value: String(userMetrics?.active_users ?? "—"), icon: Activity, detail: "Seen within the last 5 minutes", live: true },
   ];
 
   return (

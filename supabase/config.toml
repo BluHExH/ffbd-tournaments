@@ -1,0 +1,7 @@
+project_id = "glkxsxizfgwpzrwazugq"
+
+[functions.admin-handoff-issue]
+verify_jwt = true
+
+[functions.admin-handoff-redeem]
+verify_jwt = false

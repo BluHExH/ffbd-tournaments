@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { WebView } from "react-native-webview";
@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { theme } from "@/lib/theme";
 
 const ADMIN_ORIGIN = "https://ffbd-tournaments.vercel.app";
-const ADMIN_URL = `${ADMIN_ORIGIN}/admin`;
+const ADMIN_URL = ADMIN_ORIGIN + "/admin";
+const HANDOFF_URL = ADMIN_ORIGIN + "/auth/mobile-handoff";
 
 export default function Admin() {
   const [authorized, setAuthorized] = useState(false);
@@ -14,6 +15,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const webViewRef = useRef<WebView>(null);
+  const issueStarted = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -52,6 +55,54 @@ export default function Admin() {
     };
   }, []);
 
+  const handleWebMessage = async (event: { nativeEvent: { data: string; url?: string } }) => {
+    if (event.nativeEvent.url && !event.nativeEvent.url.startsWith(HANDOFF_URL)) {
+      return;
+    }
+    if (event.nativeEvent.data !== "BT_ADMIN_HANDOFF_READY" || issueStarted.current) {
+      return;
+    }
+
+    issueStarted.current = true;
+
+    if (!supabase) {
+      webViewRef.current?.injectJavaScript(
+        'window.dispatchEvent(new Event("bt-admin-handoff-error")); true;',
+      );
+      return;
+    }
+
+    const { data, error: handoffError } = await supabase.functions.invoke(
+      "admin-handoff-issue",
+      { body: {} },
+    );
+
+    if (
+      handoffError ||
+      typeof data?.code !== "string" ||
+      !/^[0-9a-f]{64}$/.test(data.code)
+    ) {
+      webViewRef.current?.injectJavaScript(
+        'window.dispatchEvent(new Event("bt-admin-handoff-error")); true;',
+      );
+      return;
+    }
+
+    const codeLiteral = JSON.stringify(data.code);
+    webViewRef.current?.injectJavaScript(
+      'window.dispatchEvent(new CustomEvent("bt-admin-handoff",{detail:{code:' +
+        codeLiteral +
+        "}})); true;",
+    );
+  };
+
+  const reloadAdmin = () => {
+    issueStarted.current = false;
+    setError(false);
+    setLoading(true);
+    setReloadKey((value) => value + 1);
+  };
+
   if (checkingAccess || !authorized) {
     return (
       <View style={styles.loading}>
@@ -71,7 +122,7 @@ export default function Admin() {
           <Text style={styles.title}>BANGLAR ADMIN</Text>
           <Text style={styles.subtitle}>SECURE CONTROL CENTER</Text>
         </View>
-        <Pressable onPress={() => { setError(false); setLoading(true); setReloadKey((v) => v + 1); }} style={styles.reload}>
+        <Pressable onPress={reloadAdmin} style={styles.reload}>
           <Text style={styles.reloadText}>↻</Text>
         </Pressable>
       </View>
@@ -79,7 +130,7 @@ export default function Admin() {
         <View style={styles.message}>
           <Text style={styles.messageTitle}>Could not load Admin Dashboard</Text>
           <Text style={styles.messageBody}>Check your internet connection and try again.</Text>
-          <Pressable onPress={() => { setError(false); setLoading(true); setReloadKey((v) => v + 1); }} style={styles.retry}>
+          <Pressable onPress={reloadAdmin} style={styles.retry}>
             <Text style={styles.retryText}>TRY AGAIN</Text>
           </Pressable>
         </View>
@@ -87,7 +138,8 @@ export default function Admin() {
         <View style={styles.webContainer}>
           <WebView
             key={reloadKey}
-            source={{ uri: ADMIN_URL }}
+            ref={webViewRef}
+            source={{ uri: HANDOFF_URL }}
             style={styles.web}
             javaScriptEnabled
             domStorageEnabled
@@ -100,15 +152,17 @@ export default function Admin() {
             originWhitelist={[ADMIN_ORIGIN]}
             onShouldStartLoadWithRequest={(request) =>
               request.url === ADMIN_ORIGIN ||
-              request.url.startsWith(`${ADMIN_ORIGIN}/`)
+              request.url.startsWith(ADMIN_ORIGIN + "/")
             }
+            onMessage={handleWebMessage}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
             onError={() => { setLoading(false); setError(true); }}
             onHttpError={(event) => {
               const failedUrl = event.nativeEvent.url;
-              const isAdminDocument = failedUrl === ADMIN_URL || failedUrl.startsWith(`${ADMIN_URL}/`);
-              if (isAdminDocument && event.nativeEvent.statusCode >= 500) {
+              const isTrustedDocument = failedUrl === ADMIN_ORIGIN ||
+                failedUrl.startsWith(ADMIN_ORIGIN + "/");
+              if (isTrustedDocument && event.nativeEvent.statusCode >= 500) {
                 setLoading(false);
                 setError(true);
               }

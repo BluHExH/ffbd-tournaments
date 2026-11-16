@@ -1,5 +1,5 @@
 name: Build Android APK (Gradle)
-# Tagged pushes build the latest approved mobile source on the feature branch.
+# Tagged pushes build the latest tested mobile source on the feature branch.
 
 on:
   workflow_dispatch:

@@ -30,13 +30,10 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --force
-          APK_SERIAL="$(python - <<'PY'
-          import subprocess
-          tags = subprocess.check_output(["git", "tag", "--list", "android-gradle-apk-*"], text=True).splitlines()
-          numbers = [int(tag.rsplit("-", 1)[1]) for tag in tags if tag.rsplit("-", 1)[-1].isdigit()]
-          print(max(numbers, default=0) + 1)
-          PY
-          )"
+          LAST_TAG="$(git describe --tags --abbrev=0 --match 'android-gradle-apk-*' 2>/dev/null || true)"
+          LAST_SERIAL="${LAST_TAG##*-}"
+          LAST_SERIAL="${LAST_SERIAL:-0}"
+          APK_SERIAL="$((LAST_SERIAL + 1))"
           echo "APK_SERIAL=$APK_SERIAL" >> "$GITHUB_ENV"
           echo "Next APK serial: $APK_SERIAL"
       - name: Set up Node.js

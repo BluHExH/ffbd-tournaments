@@ -25,16 +25,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Calculate next APK serial
-        id: apk-serial
-        run: |
-          set -euo pipefail
-          git fetch --tags --force
-          LAST_SERIAL="$(git tag --list 'android-gradle-apk-*' | sed -n 's/^android-gradle-apk-\\([0-9][0-9]*\\)$/\\1/p' | sort -n | tail -n 1)"
-          LAST_SERIAL="${LAST_SERIAL:-0}"
-          APK_SERIAL="$((LAST_SERIAL + 1))"
-          echo "APK_SERIAL=$APK_SERIAL" >> "$GITHUB_ENV"
-          echo "Next APK serial: $APK_SERIAL"
+      - name: Set APK release serial
+        run: echo "APK_SERIAL=25" >> "$GITHUB_ENV"
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:

@@ -188,6 +188,14 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          PACKAGE_ID="$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n 1)"
+          if [ "$PACKAGE_ID" != "com.banglartournaments.app" ]; then
+            echo "::error::Unexpected APK package ID: $PACKAGE_ID"
+            exit 1
+          fi
+          echo "Verified Android package ID: $PACKAGE_ID"
           mkdir -p artifacts
           APK_NAME="BANGLAR-TOURNAMENTS-APK-${GITHUB_RUN_NUMBER}.apk"
           cp "$APK" "artifacts/$APK_NAME"

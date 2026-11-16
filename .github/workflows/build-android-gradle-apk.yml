@@ -96,8 +96,8 @@ jobs:
           text = path.read_text()
           mirror = '        maven { url "https://maven.aliyun.com/repository/central" }'
           if mirror not in text:
-              pattern = r"(pluginManagement\\s*\\{\\s*repositories\\s*\\{)"
-              updated, count = re.subn(pattern, lambda match: match.group(1) + "\\n" + mirror, text, count=1)
+              pattern = r"(pluginManagement\s*\{\s*repositories\s*\{)"
+              updated, count = re.subn(pattern, lambda match: match.group(1) + "\n" + mirror, text, count=1)
               if count != 1:
                   raise SystemExit("Could not safely locate pluginManagement.repositories in generated settings.gradle")
               path.write_text(updated)

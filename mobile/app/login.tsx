@@ -11,12 +11,17 @@ export default function Login(){
  const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [showPassword,setShowPassword]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState("");
  const submit=async()=>{
   setError("");
-  if(!supabase){setError("App connection is not configured yet. Please contact the tournament team.");return}
-  if(!email.trim()||!password){setError("Enter your email address and password.");return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError("Enter a valid email address.");return}
+  if(!supabase){setError(t("auth.errorConfig"));return}
+  if(!email.trim()||!password){setError(t("auth.errorRequired"));return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setError(t("auth.errorEmail"));return}
   setBusy(true);
-  try{const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});if(error){setError(error.message==="Invalid login credentials"?"Email or password is incorrect. Please try again.":error.message);return}}
-  catch{setError("Something went wrong. Check your connection and try again.");}
+  try{
+   const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});
+   if(error){
+    setError(error.message==="Invalid login credentials"?t("auth.errorCredentials"):error.message);
+    return;
+   }
+  }catch{setError(t("auth.errorGeneric"));}
   finally{setBusy(false)}
  };
  return <AuthLayout eyebrow={t("auth.login").toUpperCase()} title={t("auth.welcome")} description={t("auth.loginDescription")} footer={t("auth.newPlayer")} footerAction={t("auth.register")} onFooterPress={()=>router.push("/register")}>

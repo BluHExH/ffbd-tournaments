@@ -9,6 +9,9 @@ import {
   Trophy,
   Users,
   CreditCard,
+  WalletCards,
+  Bell,
+  Images,
   Swords,
   Settings2,
   ShieldCheck,
@@ -26,10 +29,14 @@ const primaryLinks = [
 
 const managementLinks = [
   { href: "/admin/registrations", label: "Players & Registrations", icon: Users },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/players", label: "Player Accounts", icon: Users },
+  { href: "/admin/payments", label: "Tournament Payments", icon: CreditCard },
+  { href: "/admin/wallet", label: "Player Wallet", icon: WalletCards },
   { href: "/admin/matches", label: "Matches & Results", icon: Swords },
   { href: "/admin/settings", label: "Website Settings", icon: Settings2 },
   { href: "/admin/homepage-stats", label: "Homepage Stats", icon: Settings2 },
+  { href: "/admin/homepage-banners", label: "Homepage Banners", icon: Images },
+  { href: "/admin/notifications", label: "Player Notifications", icon: Bell },
   { href: "/admin/homepage-teams", label: "Homepage Teams", icon: Trophy },
   { href: "/admin/homepage-payouts", label: "Homepage Payouts", icon: CreditCard },
 ];
@@ -75,6 +82,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 : pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
+                  prefetch={true}
                   key={href}
                   href={href}
                   onClick={() => setMobileOpen(false)}
@@ -100,7 +108,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="space-y-1">
             {managementLinks.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
-              return <Link key={href} href={href} onClick={() => setMobileOpen(false)}
+              return <Link prefetch={true} key={href} href={href} onClick={() => setMobileOpen(false)}
                 className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all ${active ? "border border-[#FF5C00]/25 bg-[#FF5C00]/10 text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white"}`}>
                 <Icon className={`h-[18px] w-[18px] ${active ? "text-[#FF7130]" : "text-white/40 group-hover:text-white/80"}`} />
                 <span>{label}</span>

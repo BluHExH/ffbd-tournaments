@@ -18,6 +18,10 @@ export default function Admin() {
   const issueStarted = useRef(false);
   const loadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => () => {
+    if (loadTimeout.current) clearTimeout(loadTimeout.current);
+  }, []);
+
   useEffect(() => {
     let active = true;
 
@@ -62,7 +66,7 @@ export default function Admin() {
         const parsed = new URL(messageUrl);
         if (
           parsed.origin !== ADMIN_ORIGIN ||
-          parsed.pathname.replace(/\\/+$/, "") !== "/auth/mobile-handoff"
+          parsed.pathname.replace(/\/+$/, "") !== "/auth/mobile-handoff"
         ) {
           return;
         }
@@ -199,7 +203,8 @@ export default function Admin() {
               const failedUrl = event.nativeEvent.url;
               const isTrustedDocument = failedUrl === ADMIN_ORIGIN ||
                 failedUrl.startsWith(ADMIN_ORIGIN + "/");
-              if (isTrustedDocument && event.nativeEvent.statusCode >= 400) {
+              const isMainFrame = event.nativeEvent.isForMainFrame !== false;
+              if (isMainFrame && isTrustedDocument && event.nativeEvent.statusCode >= 400) {
                 if (loadTimeout.current) clearTimeout(loadTimeout.current);
                 loadTimeout.current = null;
                 setLoading(false);

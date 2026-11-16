@@ -55,7 +55,10 @@ export default function Wallet(){
   setTransactions((tx.data??[]) as Tx[]);
   setDeposits((dep.data??[]) as RequestRow[]);
   setWithdrawals((wd.data??[]) as RequestRow[]);
-  const configured=Object.fromEntries((settings.data??[]).map((row:{key:string;value:string})=>[row.key.replace("payment_","").replace("_number","").replace(/^./,v=>v.toUpperCase()),row.value]));
+  const configured=Object.fromEntries((settings.data??[]).map((row:{key:string;value:string})=>[
+    row.key==="payment_bkash_number"?"bKash":row.key==="payment_nagad_number"?"Nagad":"Rocket",
+    row.value
+  ]));
   setPaymentAccounts({bKash:String(configured.bKash??""),Nagad:String(configured.Nagad??""),Rocket:String(configured.Rocket??"")});
   setLoading(false);
  },[]);

@@ -76,7 +76,10 @@ Deno.serve(async (request: Request) => {
       return json({ error: "Administrator access required" }, 403);
     }
     if (aalError || aal?.currentLevel !== "aal2") {
-      return json(\n        { error: "Elevated administrator verification required" },\n        403,\n      );
+      return json(
+        { error: "Elevated administrator verification required" },
+        403,
+      );
     }
 
     const body = await request.json().catch(() => null) as {
@@ -100,7 +103,8 @@ Deno.serve(async (request: Request) => {
       : "general";
     if (!title || title.length > 100 || !message || message.length > 1000) {
       return json({
-        error:\n          "A title (max 100 characters) and message (max 1000 characters) are required",
+        error:
+          "A title (max 100 characters) and message (max 1000 characters) are required",
       }, 400);
     }
 

@@ -186,7 +186,7 @@ function AuthGate({ children }: PropsWithChildren) {
     const first = segments[0] as string | undefined;
     const recoveryRoute = first === "reset-password";
     const tab = (segments as unknown as string[])[1];
-    // Guests may browse public tournament pages; wallet, account, and admin remain gated.
+    // Guests may browse public tournament pages; wallet and account remain gated.
     const publicRoute = first === "(tabs)" &&
       (!tab || tab === "index" || tab === "tournaments" || tab === "results");
     const authRoute =
@@ -201,22 +201,6 @@ function AuthGate({ children }: PropsWithChildren) {
         (!first || first === "index" || authRoute) &&
         !recoveryRoute
       ) {
-        if (first === "login" && supabase) {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (!active) return;
-          if (user) {
-            const { data: admin } = await supabase
-              .from("admins")
-              .select("id")
-              .eq("id", user.id)
-              .maybeSingle();
-            if (!active) return;
-            router.replace(admin ? "/portal" : "/(tabs)");
-            return;
-          }
-        }
         router.replace("/(tabs)");
         return;
       }
@@ -266,8 +250,6 @@ export default function RootLayout() {
             <Stack.Screen name="register" />
             <Stack.Screen name="forgot-password" />
             <Stack.Screen name="reset-password" />
-            <Stack.Screen name="admin" />
-            <Stack.Screen name="portal" />
           </Stack>
         </AuthGate>
       </SafeAreaProvider>

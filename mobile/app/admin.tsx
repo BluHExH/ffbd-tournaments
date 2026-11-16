@@ -202,6 +202,23 @@ export default function Admin() {
                 setError(true);
               }, 30000);
             }}
+            onLoad={() => {
+              // Android WebView can report the main document as loaded before
+              // onLoadEnd settles. Treat the successful document load as enough
+              // to remove the native blocking overlay.
+              if (loadTimeout.current) clearTimeout(loadTimeout.current);
+              loadTimeout.current = null;
+              setLoading(false);
+            }}
+            onLoadProgress={(event) => {
+              // Fallback for Android devices where onLoadEnd is delayed or
+              // skipped after a same-origin navigation.
+              if (event.nativeEvent.progress >= 1) {
+                if (loadTimeout.current) clearTimeout(loadTimeout.current);
+                loadTimeout.current = null;
+                setLoading(false);
+              }
+            }}
             onLoadEnd={() => {
               if (loadTimeout.current) clearTimeout(loadTimeout.current);
               loadTimeout.current = null;

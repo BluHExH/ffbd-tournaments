@@ -6,10 +6,13 @@ import { AuthLayout, authStyles as s } from "@/components/AuthLayout";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/lib/i18n";
 
+const RECOVERY_REDIRECT = "banglartournaments://reset-password";
+
 export default function ForgotPassword() {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
   const submit = async () => {
@@ -20,32 +23,31 @@ export default function ForgotPassword() {
       setError("App connection is not configured.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
       setError("Enter a valid email address.");
       return;
     }
 
     setBusy(true);
     try {
-      const { error: resetError } =
-        await supabase.auth.resetPasswordForEmail(normalizedEmail);
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        normalizedEmail,
+        { redirectTo: RECOVERY_REDIRECT }
+      );
 
       if (resetError) {
         setError(
           resetError.message.toLowerCase().includes("rate limit")
-            ? "Please wait before requesting another code."
-            : "Unable to send a verification code right now. Please try again."
+            ? "Please wait before requesting another reset link."
+            : "Unable to send a reset link right now. Please try again."
         );
         return;
       }
 
-      // Keep the response generic to avoid revealing whether an email is registered.
-      router.push({
-        pathname: "/reset-password",
-        params: { email: normalizedEmail },
-      });
+      setEmail(normalizedEmail);
+      setSent(true);
     } catch {
-      setError("Unable to send a verification code right now. Please try again.");
+      setError("Unable to send a reset link right now. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -54,8 +56,12 @@ export default function ForgotPassword() {
   return (
     <AuthLayout
       eyebrow="ACCOUNT RECOVERY"
-      title="Forgot your password?"
-      description="Enter the email address linked to your player account. We will send a 6-digit verification code."
+      title={sent ? "Check your email" : "Forgot your password?"}
+      description={
+        sent
+          ? "If an account exists for this email, a password reset link has been sent. Open the email on this same phone and tap the reset link to return to the app."
+          : "Enter the email address linked to your player account. We will send you a secure password reset link."
+      }
       footer="Remembered your password?"
       footerAction={t("auth.login")}
       onFooterPress={() => router.replace("/login")}
@@ -66,6 +72,7 @@ export default function ForgotPassword() {
           value={email}
           onChangeText={(value) => {
             setEmail(value);
+            setSent(false);
             setError("");
           }}
           placeholder={t("auth.emailPlaceholder")}
@@ -87,8 +94,16 @@ export default function ForgotPassword() {
         </Text>
       ) : null}
       <Button loading={busy} disabled={busy} onPress={submit}>
-        SEND VERIFICATION CODE
+        {sent ? "RESEND RESET LINK" : "SEND RESET LINK"}
       </Button>
+      {sent ? (
+        <Button
+          disabled={busy}
+          onPress={() => router.replace("/reset-password")}
+        >
+          I HAVE OPENED THE RESET LINK
+        </Button>
+      ) : null}
     </AuthLayout>
   );
 }

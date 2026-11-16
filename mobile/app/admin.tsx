@@ -92,11 +92,24 @@ export default function Admin() {
       return;
     }
 
+    let handoffTimeout: ReturnType<typeof setTimeout> | null = null;
     try {
-      const { data, error: handoffError } = await supabase.functions.invoke(
+      const handoffRequest = supabase.functions.invoke(
         "admin-handoff-issue",
         { body: {} },
       );
+      const timeoutRequest = new Promise<never>((_resolve, reject) => {
+        handoffTimeout = setTimeout(
+          () => reject(new Error("Secure Admin handoff timed out")),
+          20000,
+        );
+      });
+      const { data, error: handoffError } = await Promise.race([
+        handoffRequest,
+        timeoutRequest,
+      ]);
+      if (handoffTimeout) clearTimeout(handoffTimeout);
+      handoffTimeout = null;
 
       if (
         handoffError ||
@@ -114,7 +127,8 @@ export default function Admin() {
           "}})); true;",
       );
     } catch {
-      // A rejected network request must not leave the handoff page spinning forever.
+      if (handoffTimeout) clearTimeout(handoffTimeout);
+      // A rejected or stalled network request must not leave the handoff page spinning forever.
       reportHandoffError();
     }
   };

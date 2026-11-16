@@ -66,7 +66,19 @@ export default function Wallet(){
  },[]);
  useEffect(()=>{void load()},[load]);
 
- const copyPaymentNumber=async(method:Method)=>{\n  const number=paymentAccounts[method].trim();if(!number)return;\n  try{await Clipboard.setStringAsync(number);setCopiedMethod(method);setMessage(method+" number copied. Now send the payment and submit the transaction ID.");setTimeout(()=>setCopiedMethod(current=>current===method?null:current),2500)}catch{setError("Could not copy the payment number. Please copy it manually.")}\n };\n const submitDeposit=async()=>{
+ const copyPaymentNumber = async (method: Method) => {
+  const number = paymentAccounts[method].trim();
+  if (!number) return;
+  try {
+    await Clipboard.setStringAsync(number);
+    setCopiedMethod(method);
+    setMessage(method + " number copied. Now send the payment and submit the transaction ID.");
+    setTimeout(() => setCopiedMethod(current => current === method ? null : current), 2500);
+  } catch {
+    setError("Could not copy the payment number. Please copy it manually.");
+  }
+ };
+ const submitDeposit = async () => {
   setError("");setMessage("");
   const amount=Number(depositAmount);
   if(!supabase||!userId){setError("Please sign in to use your wallet.");return}

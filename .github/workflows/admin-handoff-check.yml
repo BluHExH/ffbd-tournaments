@@ -1,0 +1,49 @@
+name: Admin Handoff Checks
+
+on:
+  push:
+    branches:
+      - feature/common-admin-portal
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/config.toml"
+      - "src/app/auth/mobile-handoff/**"
+      - ".github/workflows/admin-handoff-check.yml"
+  pull_request:
+    branches:
+      - feature/complete-player-wallet
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/config.toml"
+      - "src/app/auth/mobile-handoff/**"
+      - ".github/workflows/admin-handoff-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  admin-handoff:
+    name: Validate secure admin handoff
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check Edge Function formatting
+        run: deno fmt --check supabase/functions
+
+      - name: Type-check Edge Functions
+        run: |
+          deno check \
+            supabase/functions/admin-handoff-issue/index.ts \
+            supabase/functions/admin-handoff-redeem/index.ts
+
+      - name: Test handoff code security helpers
+        run: deno test supabase/functions/_shared/adminHandoff.test.ts

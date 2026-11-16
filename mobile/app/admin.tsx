@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { theme } from "@/lib/theme";
 
 const ADMIN_ORIGIN = "https://ffbd-tournaments.vercel.app";
-const ADMIN_URL = ADMIN_ORIGIN + "/admin";
 const HANDOFF_URL = ADMIN_ORIGIN + "/auth/mobile-handoff";
 
 export default function Admin() {

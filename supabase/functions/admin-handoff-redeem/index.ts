@@ -11,7 +11,8 @@ const allowedOrigin = "https://ffbd-tournaments.vercel.app";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin,
-  "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, x-supabase-api-version, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, apikey, x-client-info, x-supabase-api-version, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Cache-Control": "no-store",
   "Content-Type": "application/json",
@@ -108,7 +109,8 @@ Deno.serve(async (request: Request) => {
       return json({ error: "Administrator access required" }, 403);
     }
 
-    const { data: userResult, error: userError } = await serviceClient.auth.admin
+    const { data: userResult, error: userError } = await serviceClient.auth
+      .admin
       .getUserById(handoff.user_id);
 
     const email = userResult?.user?.email;

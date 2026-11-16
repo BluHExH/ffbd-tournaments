@@ -201,8 +201,6 @@ export default function Admin() {
             }}
             onHttpError={(event) => {
               const failedUrl = event.nativeEvent.url;
-              const isTrustedDocument = failedUrl === ADMIN_ORIGIN ||
-                failedUrl.startsWith(ADMIN_ORIGIN + "/");
               const isAdminDocument = failedUrl === HANDOFF_URL ||
                 /^https:\/\/ffbd-tournaments\.vercel\.app\/admin(?:\/|$)/.test(failedUrl);
               if (isAdminDocument && event.nativeEvent.statusCode >= 400) {

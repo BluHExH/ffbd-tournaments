@@ -39,7 +39,11 @@ export default function ResetPassword() {
   const processedRef = useRef<string | null>(null);
 
   const processRecovery = useCallback(async (parts: RecoveryParts) => {
-    const key = parts.code || parts.tokenHash || parts.accessToken;
+    const key =
+      parts.code ||
+      parts.tokenHash ||
+      parts.accessToken ||
+      (parts.error ? "recovery-error" : null);
     if (!key || processedRef.current === key) return;
 
     processedRef.current = key;

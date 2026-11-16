@@ -25,6 +25,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Keep this build's published APK filename aligned with the next release serial.
       - name: Set APK release serial
         run: echo "APK_SERIAL=25" >> "$GITHUB_ENV"
       - name: Set up Node.js

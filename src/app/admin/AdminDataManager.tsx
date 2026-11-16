@@ -61,6 +61,7 @@ export function AdminDataManager({
     setNotice("");
     const payload: Row = {};
     for (const field of fields) {
+      if (field.readOnly) continue;
       const raw = values[field.key];
       if (field.type === "number") payload[field.key] = raw === "" || raw == null ? 0 : Number(raw);
       else if (field.type === "uuid") payload[field.key] = raw == null || String(raw).trim() === "" ? null : String(raw).trim();

@@ -16,6 +16,7 @@ export default function Admin() {
   const [reloadKey, setReloadKey] = useState(0);
   const webViewRef = useRef<WebView>(null);
   const issueStarted = useRef(false);
+  const loadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -55,47 +56,68 @@ export default function Admin() {
   }, []);
 
   const handleWebMessage = async (event: { nativeEvent: { data: string; url?: string } }) => {
-    if (event.nativeEvent.url && !event.nativeEvent.url.startsWith(HANDOFF_URL)) {
-      return;
+    const messageUrl = event.nativeEvent.url;
+    if (messageUrl) {
+      try {
+        const parsed = new URL(messageUrl);
+        if (
+          parsed.origin !== ADMIN_ORIGIN ||
+          parsed.pathname.replace(/\\/+$/, "") !== "/auth/mobile-handoff"
+        ) {
+          return;
+        }
+      } catch {
+        return;
+      }
     }
+
     if (event.nativeEvent.data !== "BT_ADMIN_HANDOFF_READY" || issueStarted.current) {
       return;
     }
 
     issueStarted.current = true;
 
+    const reportHandoffError = () => {
+      webViewRef.current?.injectJavaScript(
+        'window.dispatchEvent(new Event("bt-admin-handoff-error")); true;',
+      );
+    };
+
     if (!supabase) {
-      webViewRef.current?.injectJavaScript(
-        'window.dispatchEvent(new Event("bt-admin-handoff-error")); true;',
-      );
+      reportHandoffError();
       return;
     }
 
-    const { data, error: handoffError } = await supabase.functions.invoke(
-      "admin-handoff-issue",
-      { body: {} },
-    );
-
-    if (
-      handoffError ||
-      typeof data?.code !== "string" ||
-      !/^[0-9a-f]{64}$/.test(data.code)
-    ) {
-      webViewRef.current?.injectJavaScript(
-        'window.dispatchEvent(new Event("bt-admin-handoff-error")); true;',
+    try {
+      const { data, error: handoffError } = await supabase.functions.invoke(
+        "admin-handoff-issue",
+        { body: {} },
       );
-      return;
-    }
 
-    const codeLiteral = JSON.stringify(data.code);
-    webViewRef.current?.injectJavaScript(
-      'window.dispatchEvent(new CustomEvent("bt-admin-handoff",{detail:{code:' +
-        codeLiteral +
-        "}})); true;",
-    );
+      if (
+        handoffError ||
+        typeof data?.code !== "string" ||
+        !/^[0-9a-f]{64}$/.test(data.code)
+      ) {
+        reportHandoffError();
+        return;
+      }
+
+      const codeLiteral = JSON.stringify(data.code);
+      webViewRef.current?.injectJavaScript(
+        'window.dispatchEvent(new CustomEvent("bt-admin-handoff",{detail:{code:' +
+          codeLiteral +
+          "}})); true;",
+      );
+    } catch {
+      // A rejected network request must not leave the handoff page spinning forever.
+      reportHandoffError();
+    }
   };
 
   const reloadAdmin = () => {
+    if (loadTimeout.current) clearTimeout(loadTimeout.current);
+    loadTimeout.current = null;
     issueStarted.current = false;
     setError(false);
     setLoading(true);
@@ -154,14 +176,32 @@ export default function Admin() {
               request.url.startsWith(ADMIN_ORIGIN + "/")
             }
             onMessage={handleWebMessage}
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            onError={() => { setLoading(false); setError(true); }}
+            onLoadStart={() => {
+              setLoading(true);
+              if (loadTimeout.current) clearTimeout(loadTimeout.current);
+              loadTimeout.current = setTimeout(() => {
+                setLoading(false);
+                setError(true);
+              }, 30000);
+            }}
+            onLoadEnd={() => {
+              if (loadTimeout.current) clearTimeout(loadTimeout.current);
+              loadTimeout.current = null;
+              setLoading(false);
+            }}
+            onError={() => {
+              if (loadTimeout.current) clearTimeout(loadTimeout.current);
+              loadTimeout.current = null;
+              setLoading(false);
+              setError(true);
+            }}
             onHttpError={(event) => {
               const failedUrl = event.nativeEvent.url;
               const isTrustedDocument = failedUrl === ADMIN_ORIGIN ||
                 failedUrl.startsWith(ADMIN_ORIGIN + "/");
-              if (isTrustedDocument && event.nativeEvent.statusCode >= 500) {
+              if (isTrustedDocument && event.nativeEvent.statusCode >= 400) {
+                if (loadTimeout.current) clearTimeout(loadTimeout.current);
+                loadTimeout.current = null;
                 setLoading(false);
                 setError(true);
               }

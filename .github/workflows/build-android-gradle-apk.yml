@@ -102,6 +102,7 @@ jobs:
           # This works whether or not Expo already generated a repositories block.
           mirror_block = """
               repositories {
+                  maven { url "https://maven-central.storage-download.googleapis.com/maven2" }
                   maven { url "https://maven.aliyun.com/repository/central" }
                   gradlePluginPortal()
                   google()

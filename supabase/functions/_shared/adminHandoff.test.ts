@@ -1,4 +1,4 @@
-import { assertEquals, assertMatch, assertNotMatch } from "jsr:@std/assert@1";
+import { assertEquals, assertMatch } from "jsr:@std/assert@1";
 import {
   createHandoffCode,
   HANDOFF_TTL_MS,

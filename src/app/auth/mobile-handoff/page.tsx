@@ -46,63 +46,67 @@ export default function MobileAdminHandoffPage() {
       setMode("working");
       setStatus("Securing your Admin session…");
 
-      const { data, error } = await supabase.functions.invoke(
-        "admin-handoff-redeem",
-        { body: { code } },
-      );
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          "admin-handoff-redeem",
+          { body: { code } },
+        );
 
-      if (error || typeof data?.tokenHash !== "string" || !data.tokenHash) {
-        showError("The secure sign-in expired or could not be completed. Reopen Admin Dashboard in the app.");
-        return;
+        if (error || typeof data?.tokenHash !== "string" || !data.tokenHash) {
+          showError("The secure sign-in expired or could not be completed. Reopen Admin Dashboard in the app.");
+          return;
+        }
+
+        const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: data.tokenHash,
+          type: "magiclink",
+        });
+
+        if (verifyError || !verified.user) {
+          showError("The one-time sign-in could not be verified. Reopen Admin Dashboard in the app.");
+          return;
+        }
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          await supabase.auth.signOut();
+          showError("The Admin session could not be confirmed. Please try again.");
+          return;
+        }
+
+        const { data: admin, error: adminError } = await supabase
+          .from("admins")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (adminError || !admin) {
+          await supabase.auth.signOut();
+          showError("This account is not authorized for the Admin Panel.");
+          return;
+        }
+
+        const { data: aal, error: aalError } = await supabase.auth.mfa
+          .getAuthenticatorAssuranceLevel();
+
+        if (aalError || !aal) {
+          showError("Could not verify the Admin security level. Please try again.");
+          return;
+        }
+
+        // A handoff creates only an AAL1 browser session. The existing Admin
+        // login flow must still complete TOTP and reach AAL2 before any admin
+        // page or data is served.
+        window.location.replace(
+          aal.currentLevel === "aal2" ? "/admin" : "/admin/login?step=mfa",
+        );
+      } catch {
+        showError("The secure sign-in could not be completed. Reopen Admin Dashboard in the app.");
       }
-
-      const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
-        token_hash: data.tokenHash,
-        type: "magiclink",
-      });
-
-      if (verifyError || !verified.user) {
-        showError("The one-time sign-in could not be verified. Reopen Admin Dashboard in the app.");
-        return;
-      }
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        await supabase.auth.signOut();
-        showError("The Admin session could not be confirmed. Please try again.");
-        return;
-      }
-
-      const { data: admin, error: adminError } = await supabase
-        .from("admins")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (adminError || !admin) {
-        await supabase.auth.signOut();
-        showError("This account is not authorized for the Admin Panel.");
-        return;
-      }
-
-      const { data: aal, error: aalError } = await supabase.auth.mfa
-        .getAuthenticatorAssuranceLevel();
-
-      if (aalError || !aal) {
-        showError("Could not verify the Admin security level. Please try again.");
-        return;
-      }
-
-      // A handoff creates only an AAL1 browser session. The existing Admin
-      // login flow must still complete TOTP and reach AAL2 before any admin
-      // page or data is served.
-      window.location.replace(
-        aal.currentLevel === "aal2" ? "/admin" : "/admin/login?step=mfa",
-      );
     };
 
     const handleHandoff = (event: Event) => {
@@ -180,24 +184,30 @@ export default function MobileAdminHandoffPage() {
 
     setMode("working");
     setStatus("Signing out the other website account…");
-    const { error } = await supabase.auth.signOut();
 
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        setMode("error");
+        setStatus("Could not sign out the other website account. Please sign out and reopen Admin Dashboard.");
+        return;
+      }
+
+      const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
+      if (!bridge) {
+        setMode("error");
+        setStatus("Return to the BANGLAR TOURNAMENTS app and reopen Admin Dashboard.");
+        return;
+      }
+
+      setMode("waiting");
+      setStatus("Preparing a secure, one-time sign-in…");
+      bridge.postMessage("BT_ADMIN_HANDOFF_READY");
+    } catch {
       setMode("error");
-      setStatus("Could not sign out the other website account. Please sign out and reopen Admin Dashboard.");
-      return;
+      setStatus("Could not sign out the other website account. Please reload and try again.");
     }
-
-    const bridge = (window as NativeBridgeWindow).ReactNativeWebView;
-    if (!bridge) {
-      setMode("error");
-      setStatus("Return to the BANGLAR TOURNAMENTS app and reopen Admin Dashboard.");
-      return;
-    }
-
-    setMode("waiting");
-    setStatus("Preparing a secure, one-time sign-in…");
-    bridge.postMessage("BT_ADMIN_HANDOFF_READY");
   };
 
   return (

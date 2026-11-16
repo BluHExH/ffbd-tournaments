@@ -2,7 +2,10 @@ export const HANDOFF_TTL_MS = 60_000;
 
 export function createHandoffCode(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(
+    bytes,
+    (byte) => byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 export function isValidHandoffCode(value: unknown): value is string {
@@ -14,8 +17,9 @@ export async function hashHandoffCode(code: string): Promise<string> {
     "SHA-256",
     new TextEncoder().encode(code),
   );
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0")
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, "0"),
   ).join("");
 }
 

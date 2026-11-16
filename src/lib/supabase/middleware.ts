@@ -10,6 +10,14 @@ import { NextResponse, type NextRequest } from "next/server";
  * - /admin/*      — AAL2 required
  */
 export async function updateSession(request: NextRequest) {
+  // The mobile handoff page is a public bridge between the native WebView and
+  // Supabase Auth. It performs its own browser-side session checks, so avoid
+  // blocking its document response on a server-side getUser() middleware call.
+  // Admin data remains protected by the normal /admin middleware + requireAdmin/AAL2 gates.
+  if (request.nextUrl.pathname === "/auth/mobile-handoff") {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

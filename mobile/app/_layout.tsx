@@ -31,7 +31,8 @@ Notifications.setNotificationHandler({
 
 function DeviceServices() {
   useEffect(() => {
-    if (!supabase) return;
+    const db = supabase;
+    if (!db) return;
     let mounted = true;
     let currentUserId: string | null = null;
     let heartbeat: ReturnType<typeof setInterval> | null = null;
@@ -39,14 +40,14 @@ function DeviceServices() {
     const touchPresence = async () => {
       if (!currentUserId || AppState.currentState !== "active") return;
       try {
-        await supabase.rpc("touch_my_presence", { p_platform: Platform.OS });
+        await db.rpc("touch_my_presence", { p_platform: Platform.OS });
       } catch {
         // Presence updates are best-effort and must not interrupt app use.
       }
     };
 
     const registerPush = async (userId: string) => {
-      if (!Device.isDevice || !supabase) return;
+      if (!Device.isDevice) return;
       try {
         if (Platform.OS === "android") {
           await Notifications.setNotificationChannelAsync("default", {
@@ -63,7 +64,7 @@ function DeviceServices() {
         if (!projectId) return;
         const token = await Notifications.getExpoPushTokenAsync({ projectId });
         if (!mounted || !token.data) return;
-        await supabase.rpc("register_my_push_token", {
+        await db.rpc("register_my_push_token", {
           p_token: token.data,
           p_platform: Platform.OS === "ios" ? "ios" : "android",
         });
@@ -82,10 +83,10 @@ function DeviceServices() {
       void registerPush(userId);
     };
 
-    void supabase.auth.getSession().then(({ data }) => {
+    void db.auth.getSession().then(({ data }) => {
       if (mounted) void activate(data.session?.user.id ?? null);
     });
-    const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: auth } = db.auth.onAuthStateChange((_event, session) => {
       void activate(session?.user.id ?? null);
     });
     const appState = AppState.addEventListener("change", (state) => {

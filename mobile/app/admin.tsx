@@ -203,8 +203,9 @@ export default function Admin() {
               const failedUrl = event.nativeEvent.url;
               const isTrustedDocument = failedUrl === ADMIN_ORIGIN ||
                 failedUrl.startsWith(ADMIN_ORIGIN + "/");
-              const isMainFrame = event.nativeEvent.isForMainFrame !== false;
-              if (isMainFrame && isTrustedDocument && event.nativeEvent.statusCode >= 400) {
+              const isAdminDocument = failedUrl === HANDOFF_URL ||
+                /^https:\/\/ffbd-tournaments\.vercel\.app\/admin(?:\/|$)/.test(failedUrl);
+              if (isAdminDocument && event.nativeEvent.statusCode >= 400) {
                 if (loadTimeout.current) clearTimeout(loadTimeout.current);
                 loadTimeout.current = null;
                 setLoading(false);

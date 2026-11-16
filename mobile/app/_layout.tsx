@@ -185,6 +185,9 @@ function AuthGate({ children }: PropsWithChildren) {
     let active = true;
     const first = segments[0] as string | undefined;
     const recoveryRoute = first === "reset-password";
+    const tab = segments[1] as string | undefined;
+    const publicRoute = first === "(tabs)" &&
+      (!tab || tab === "index" || tab === "tournaments" || tab === "results");
     const authRoute =
       first === "login" ||
       first === "register" ||
@@ -216,7 +219,7 @@ function AuthGate({ children }: PropsWithChildren) {
         router.replace("/(tabs)");
         return;
       }
-      if (!hasSession && !authRoute) router.replace("/login");
+      if (!hasSession && !authRoute && !publicRoute) router.replace("/login");
     };
     void routeUser();
     return () => {
@@ -227,6 +230,9 @@ function AuthGate({ children }: PropsWithChildren) {
   if (hasSession === null) return <StartupScreen />;
 
   const first = segments[0] as string | undefined;
+  const tab = segments[1] as string | undefined;
+  const publicRoute = first === "(tabs)" &&
+    (!tab || tab === "index" || tab === "tournaments" || tab === "results");
   const recoveryRoute = first === "reset-password";
   const authRoute =
     first === "login" ||
@@ -234,7 +240,7 @@ function AuthGate({ children }: PropsWithChildren) {
     first === "forgot-password" ||
     recoveryRoute;
 
-  if ((hasSession && authRoute && !recoveryRoute) || (!hasSession && !authRoute))
+  if ((hasSession && authRoute && !recoveryRoute) || (!hasSession && !authRoute && !publicRoute))
     return <StartupScreen />;
 
   return <>{children}</>;

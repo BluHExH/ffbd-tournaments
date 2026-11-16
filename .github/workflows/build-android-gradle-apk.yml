@@ -94,7 +94,7 @@ jobs:
 
           path = Path("android/settings.gradle")
           text = path.read_text()
-          match = re.search(r"pluginManagement\\s*\\{", text)
+          match = re.search(r"pluginManagement\s*\{", text)
           if not match:
               raise SystemExit("Generated settings.gradle has no pluginManagement block")
 
@@ -110,7 +110,7 @@ jobs:
           """
           if "https://maven.aliyun.com/repository/central" not in text:
               insert_at = match.end()
-              text = text[:insert_at] + "\\n" + mirror_block + text[insert_at:]
+              text = text[:insert_at] + "\n" + mirror_block + text[insert_at:]
               path.write_text(text)
           print("Configured the Maven Central mirror in pluginManagement.repositories.")
           PY

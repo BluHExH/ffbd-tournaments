@@ -24,6 +24,7 @@ export default async function AdminDashboardPage() {
     upcomingResult,
     prizeResult,
     recentResult,
+    userMetricsResult,
   ] = await Promise.all([
     supabase.from("tournaments").select("*", { count: "exact", head: true }),
     supabase.from("tournaments").select("*", { count: "exact", head: true }).eq("status", "live"),
@@ -33,15 +34,21 @@ export default async function AdminDashboardPage() {
       .select("id, uid, title, status, prize_pool, start_at, mode, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
+    supabase.rpc("admin_user_metrics"),
   ]);
 
   const totalPrize = prizeResult.data?.reduce((sum, item) => sum + (item.prize_pool || 0), 0) ?? 0;
   const recent = recentResult.data ?? [];
+  const userMetrics = Array.isArray(userMetricsResult.data)
+    ? userMetricsResult.data[0]
+    : userMetricsResult.data;
   const stats = [
     { label: "Total tournaments", value: String(totalResult.count ?? 0), icon: Trophy, detail: "All records" },
     { label: "Live tournaments", value: String(liveResult.count ?? 0), icon: Activity, detail: "Currently running", live: true },
     { label: "Upcoming", value: String(upcomingResult.count ?? 0), icon: CalendarDays, detail: "Scheduled events" },
-    { label: "Total prize pool", value: formatBDT(totalPrize), icon: Users, detail: "Across all tournaments" },\n    { label: "Registered users", value: String(userMetrics?.total_users ?? "—"), icon: Users, detail: "All platform accounts" },\n    { label: "Active now", value: String(userMetrics?.active_users ?? "—"), icon: Activity, detail: "Seen within the last 5 minutes", live: true },
+    { label: "Total prize pool", value: formatBDT(totalPrize), icon: Users, detail: "Across all tournaments" },
+    { label: "Registered users", value: String(userMetrics?.total_users ?? "—"), icon: Users, detail: "All platform accounts" },
+    { label: "Active now", value: String(userMetrics?.active_users ?? "—"), icon: Activity, detail: "Seen within the last 5 minutes", live: true },
   ];
 
   return (

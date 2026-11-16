@@ -3,6 +3,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { BRAND } from "@/lib/brand";
+import { UserPresence } from "@/components/UserPresence";
 
 export const metadata: Metadata = {
   title: `${BRAND.name} | Bangladesh Free Fire Tournaments`,
@@ -48,7 +49,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider><UserPresence />{children}</LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

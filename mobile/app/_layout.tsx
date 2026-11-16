@@ -1,4 +1,8 @@
 import { useEffect, useState, type PropsWithChildren } from "react";
+import { AppState, Platform } from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
 import {
   ActivityIndicator,
   Image,
@@ -14,6 +18,84 @@ import { theme } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { LanguageProvider } from "@/lib/i18n";
 import { setPendingRecoveryUrl } from "@/lib/recovery";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+function DeviceServices() {
+  useEffect(() => {
+    if (!supabase) return;
+    let mounted = true;
+    let currentUserId: string | null = null;
+    let heartbeat: ReturnType<typeof setInterval> | null = null;
+
+    const touchPresence = async () => {
+      if (!currentUserId || AppState.currentState !== "active") return;
+      await supabase?.rpc("touch_my_presence", { p_platform: Platform.OS }).then(() => undefined).catch(() => undefined);
+    };
+
+    const registerPush = async (userId: string) => {
+      if (!Device.isDevice || !supabase) return;
+      try {
+        if (Platform.OS === "android") {
+          await Notifications.setNotificationChannelAsync("default", {
+            name: "General notifications", importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250], lightColor: "#FF5C00",
+          });
+        }
+        let permission = await Notifications.getPermissionsAsync();
+        if (!permission.granted && permission.canAskAgain) {
+          permission = await Notifications.requestPermissionsAsync();
+        }
+        if (!permission.granted || !mounted) return;
+        const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+        if (!projectId) return;
+        const token = await Notifications.getExpoPushTokenAsync({ projectId });
+        if (!mounted || !token.data) return;
+        await supabase.rpc("register_my_push_token", {
+          p_token: token.data,
+          p_platform: Platform.OS === "ios" ? "ios" : "android",
+        });
+      } catch {
+        // Push permission or token registration must never block app startup.
+      }
+    };
+
+    const activate = async (userId: string | null) => {
+      currentUserId = userId;
+      if (heartbeat) clearInterval(heartbeat);
+      heartbeat = null;
+      if (!userId) return;
+      await touchPresence();
+      heartbeat = setInterval(() => { void touchPresence(); }, 60_000);
+      void registerPush(userId);
+    };
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (mounted) void activate(data.session?.user.id ?? null);
+    });
+    const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => {
+      void activate(session?.user.id ?? null);
+    });
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") void touchPresence();
+    });
+    return () => {
+      mounted = false;
+      if (heartbeat) clearInterval(heartbeat);
+      auth.subscription.unsubscribe();
+      appState.remove();
+    };
+  }, []);
+  return null;
+}
 
 function StartupScreen() {
   return (

@@ -38,7 +38,11 @@ function DeviceServices() {
 
     const touchPresence = async () => {
       if (!currentUserId || AppState.currentState !== "active") return;
-      try {\n        await supabase.rpc("touch_my_presence", { p_platform: Platform.OS });\n      } catch {\n        // Presence updates are best-effort and must not interrupt app use.\n      }
+      try {
+        await supabase.rpc("touch_my_presence", { p_platform: Platform.OS });
+      } catch {
+        // Presence updates are best-effort and must not interrupt app use.
+      }
     };
 
     const registerPush = async (userId: string) => {

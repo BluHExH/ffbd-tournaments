@@ -186,6 +186,7 @@ function AuthGate({ children }: PropsWithChildren) {
     const first = segments[0] as string | undefined;
     const recoveryRoute = first === "reset-password";
     const tab = (segments as unknown as string[])[1];
+    // Guests may browse public tournament pages; wallet, account, and admin remain gated.
     const publicRoute = first === "(tabs)" &&
       (!tab || tab === "index" || tab === "tournaments" || tab === "results");
     const authRoute =

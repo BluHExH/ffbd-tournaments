@@ -185,7 +185,7 @@ function AuthGate({ children }: PropsWithChildren) {
     let active = true;
     const first = segments[0] as string | undefined;
     const recoveryRoute = first === "reset-password";
-    const tab = segments[1] as string | undefined;
+    const tab = (segments as unknown as string[])[1];
     const publicRoute = first === "(tabs)" &&
       (!tab || tab === "index" || tab === "tournaments" || tab === "results");
     const authRoute =
@@ -230,7 +230,7 @@ function AuthGate({ children }: PropsWithChildren) {
   if (hasSession === null) return <StartupScreen />;
 
   const first = segments[0] as string | undefined;
-  const tab = segments[1] as string | undefined;
+  const tab = (segments as unknown as string[])[1];
   const publicRoute = first === "(tabs)" &&
     (!tab || tab === "index" || tab === "tournaments" || tab === "results");
   const recoveryRoute = first === "reset-password";

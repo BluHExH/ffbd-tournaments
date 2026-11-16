@@ -13,11 +13,28 @@
       "resizeMode": "contain",
       "backgroundColor": "#07110B"
     },
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "plugins": [
       "expo-router",
-      ["expo-secure-store", { "configureAndroidBackup": true }],
-      "expo-font"
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./banglar-tournaments-app-icon.png",
+          "color": "#FF5C00",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "android": {
       "package": "com.banglartournaments.app",
@@ -30,7 +47,10 @@
         {
           "action": "VIEW",
           "autoVerify": false,
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": [
             {
               "scheme": "banglartournaments",
@@ -49,10 +69,14 @@
       "supportsTablet": true,
       "icon": "./banglar-tournaments-app-icon.png"
     },
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
       "router": {},
-      "eas": { "projectId": "3d8daf5c-32f7-4b88-b03f-a5d7dca93aea" }
+      "eas": {
+        "projectId": "3d8daf5c-32f7-4b88-b03f-a5d7dca93aea"
+      }
     },
     "owner": "sawon-islams-team"
   }

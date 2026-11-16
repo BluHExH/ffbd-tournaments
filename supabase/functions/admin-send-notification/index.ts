@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0?target
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
-const secretKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEY") ?? "";
+function getSecretKey(): string {\n  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");\n  if (legacy) return legacy;\n  const single = Deno.env.get("SUPABASE_SECRET_KEY");\n  if (single) return single;\n  try {\n    const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");\n    return typeof keys.default === "string" ? keys.default : "";\n  } catch {\n    return "";\n  }\n}\nconst secretKey = getSecretKey();
 
 const headers = {
   "Access-Control-Allow-Origin": "*",

@@ -30,7 +30,13 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --force
-          LAST_SERIAL="$(git tag --list 'android-gradle-apk-*' | grep -E '^android-gradle-apk-[0-9]+
+          LAST_SERIAL="0"
+          for tag in $(git tag --list 'android-gradle-apk-*'); do
+            serial="${tag##*-}"
+            if [[ "$serial" =~ ^[0-9]+$ ]] && [ "$serial" -gt "$LAST_SERIAL" ]; then
+              LAST_SERIAL="$serial"
+            fi
+          done
           LAST_SERIAL="${LAST_SERIAL:-0}"
           APK_SERIAL="$((LAST_SERIAL + 1))"
           echo "APK_SERIAL=$APK_SERIAL" >> "$GITHUB_ENV"

@@ -34,7 +34,7 @@ jobs:
 
       - name: Install mobile dependencies
         working-directory: mobile
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Validate mobile TypeScript
         working-directory: mobile

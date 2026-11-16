@@ -94,14 +94,25 @@ jobs:
 
           path = Path("android/settings.gradle")
           text = path.read_text()
-          mirror = '        maven { url "https://maven.aliyun.com/repository/central" }'
-          if mirror not in text:
-              pattern = r"(pluginManagement\s*\{\s*repositories\s*\{)"
-              updated, count = re.subn(pattern, lambda match: match.group(1) + "\n" + mirror, text, count=1)
-              if count != 1:
-                  raise SystemExit("Could not safely locate pluginManagement.repositories in generated settings.gradle")
-              path.write_text(updated)
-          print("Configured Maven Central mirror before the default repositories.")
+          match = re.search(r"pluginManagement\\s*\\{", text)
+          if not match:
+              raise SystemExit("Generated settings.gradle has no pluginManagement block")
+
+          # Add an early repository block directly inside pluginManagement.
+          # This works whether or not Expo already generated a repositories block.
+          mirror_block = """
+              repositories {
+                  maven { url "https://maven.aliyun.com/repository/central" }
+                  gradlePluginPortal()
+                  google()
+                  mavenCentral()
+              }
+          """
+          if "https://maven.aliyun.com/repository/central" not in text:
+              insert_at = match.end()
+              text = text[:insert_at] + "\\n" + mirror_block + text[insert_at:]
+              path.write_text(text)
+          print("Configured the Maven Central mirror in pluginManagement.repositories.")
           PY
 
       - name: Configure release signing

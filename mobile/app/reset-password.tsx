@@ -1,13 +1,26 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Linking, Text, TextInput, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "@/components/UI";
 import { AuthLayout, authStyles as s } from "@/components/AuthLayout";
 import { supabase } from "@/lib/supabase";
-import { theme } from "@/lib/theme";
+import {
+  consumePendingRecoveryUrl,
+  hasRecoverablePayload,
+  parseRecoveryParams,
+  parseRecoveryUrl,
+  type RecoveryParts,
+} from "@/lib/recovery";
 
 type RouteParams = {
   email?: string | string[];
+  code?: string | string[];
+  access_token?: string | string[];
+  refresh_token?: string | string[];
+  token_hash?: string | string[];
+  type?: string | string[];
+  error?: string | string[];
+  error_description?: string | string[];
 };
 
 const first = (value: string | string[] | undefined) =>
@@ -16,96 +29,115 @@ const first = (value: string | string[] | undefined) =>
 export default function ResetPassword() {
   const params = useLocalSearchParams<RouteParams>();
   const email = (first(params.email) || "").trim().toLowerCase();
-
-  const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [processing, setProcessing] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const processedRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!email) {
-      setError("Enter your account email to request a verification code.");
-    }
-  }, [email]);
+  const processRecovery = useCallback(async (parts: RecoveryParts) => {
+    const key = parts.code || parts.tokenHash || parts.accessToken;
+    if (!key || processedRef.current === key) return;
 
-  const verifyCode = async () => {
+    processedRef.current = key;
+    setProcessing(true);
     setError("");
-    if (!supabase) {
-      setError("App connection is not configured.");
-      return;
-    }
-    if (!email) {
-      setError("Your email address is missing. Request a new code.");
-      return;
-    }
-    const code = otp.replace(/\s/g, "");
-    if (!/^\d{6}$/.test(code)) {
-      setError("Enter the 6-digit code sent to your email.");
-      return;
-    }
 
-    setVerifying(true);
     try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: "recovery",
-      });
-
-      if (verifyError || !data.session || !data.user) {
-        throw verifyError || new Error("The verification code is invalid or expired.");
+      if (!supabase) throw new Error("App connection is not configured.");
+      if (parts.error) {
+        throw new Error("This password reset link is invalid or expired. Request a new link.");
+      }
+      if (parts.type && parts.type !== "recovery") {
+        throw new Error("This link is not a password reset link. Request a new one.");
       }
 
-      if (data.user.email?.toLowerCase() !== email) {
+      if (parts.code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(parts.code);
+        if (exchangeError) throw exchangeError;
+      } else if (parts.tokenHash && (!parts.type || parts.type === "recovery")) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: parts.tokenHash,
+          type: "recovery",
+        });
+        if (verifyError) throw verifyError;
+      } else if (parts.accessToken && parts.refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: parts.accessToken,
+          refresh_token: parts.refreshToken,
+        });
+        if (sessionError) throw sessionError;
+      } else {
+        throw new Error("The reset link did not contain a valid recovery code.");
+      }
+
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (userError || !data.user) {
+        throw userError || new Error("The recovery session could not be verified.");
+      }
+      if (email && data.user.email?.toLowerCase() !== email) {
         await supabase.auth.signOut();
-        throw new Error("The verification code does not match this email address.");
+        throw new Error("This reset link belongs to a different account.");
       }
 
       setVerified(true);
-      setOtp("");
       setError("");
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "The code could not be verified. Request a new code and try again."
-      );
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const resendCode = async () => {
-    setError("");
-    if (!supabase || !email) {
-      setError("Return to the previous screen and enter your email address.");
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const { error: resendError } =
-        await supabase.auth.resetPasswordForEmail(email);
-      if (resendError) {
-        setError(
-          resendError.message.toLowerCase().includes("rate limit")
-            ? "Please wait before requesting another code."
-            : "Unable to send a new code right now. Please try again."
-        );
-        return;
-      }
-      setOtp("");
-      setError("If an account exists for this email, a new code has been sent.");
     } catch {
-      setError("Unable to send a new code right now. Please try again.");
+      processedRef.current = null;
+      setError("This reset link is invalid, expired, or already used. Request a new reset link and open it on this phone.");
     } finally {
-      setBusy(false);
+      setProcessing(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    let active = true;
+    const handleUrl = (url: string) => {
+      if (!active) return;
+      const parts = parseRecoveryUrl(url);
+      if (hasRecoverablePayload(parts)) void processRecovery(parts);
+    };
+
+    const pending = consumePendingRecoveryUrl();
+    if (pending) {
+      handleUrl(pending);
+    } else {
+      const routeParts = parseRecoveryParams(
+        params as Record<string, string | string[] | undefined>
+      );
+      if (hasRecoverablePayload(routeParts)) {
+        void processRecovery(routeParts);
+      } else {
+        void Linking.getInitialURL()
+          .then((url) => {
+            if (url) handleUrl(url);
+          })
+          .catch(() => undefined);
+      }
+    }
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleUrl(url);
+    });
+
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, [
+    processRecovery,
+    params.code,
+    params.access_token,
+    params.refresh_token,
+    params.token_hash,
+    params.type,
+    params.error,
+    params.error_description,
+  ]);
 
   const submitPassword = async () => {
     setError("");
@@ -115,7 +147,7 @@ export default function ResetPassword() {
       return;
     }
     if (!verified) {
-      setError("Verify your email code before choosing a new password.");
+      setError("Open and verify the password reset link before choosing a new password.");
       return;
     }
     if (password.length < 8) {
@@ -137,161 +169,107 @@ export default function ResetPassword() {
         return;
       }
 
-      setSuccess(
-        "Your password has been changed successfully. You can now sign in with your new password."
-      );
-      // Password update has succeeded; clear the recovery session.
+      setSuccess("Your password has been changed successfully. You can now sign in with your new password.");
       await supabase.auth.signOut().catch(() => undefined);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Unable to update your password. Please try again."
-      );
+    } catch {
+      setError("Unable to update your password. Please try again.");
     } finally {
       setBusy(false);
     }
   };
 
-  if (!email) {
+  if (success) {
     return (
       <AuthLayout
         eyebrow="ACCOUNT RECOVERY"
-        title="Email required"
-        description="Return to the previous screen and enter the email address linked to your account."
-        footer="Remembered your password?"
+        title="Password updated"
+        description="Your account is ready. Sign in with your new password."
+        footer="Return to your account"
         footerAction="Back to login"
         onFooterPress={() => router.replace("/login")}
       >
-        <Button onPress={() => router.replace("/forgot-password")}>
-          ENTER EMAIL
-        </Button>
+        <Text accessibilityRole="alert" style={s.success}>{success}</Text>
+        <Button onPress={() => router.replace("/login")}>GO TO LOGIN</Button>
       </AuthLayout>
     );
   }
 
-  if (verifying) {
+  if (!verified) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#0B1221",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+      <AuthLayout
+        eyebrow="ACCOUNT RECOVERY"
+        title={processing ? "Verifying reset link" : "Open your reset link"}
+        description={
+          processing
+            ? "Please wait while we securely verify your password reset link."
+            : "We are waiting for the secure reset link from your email. Open the latest reset email on this same phone and tap its reset button. The link will bring you back here."
+        }
+        footer="Remembered your password?"
+        footerAction="Back to login"
+        onFooterPress={() => router.replace("/login")}
       >
-        <ActivityIndicator color={theme.accent} />
-        <Text style={{ color: "#94A3B8", marginTop: 12 }}>
-          Verifying your code…
-        </Text>
-      </View>
+        {error ? (
+          <Text accessibilityRole="alert" style={s.error}>{error}</Text>
+        ) : null}
+        <Button
+          disabled={processing}
+          onPress={() => router.replace("/forgot-password")}
+        >
+          REQUEST A NEW RESET LINK
+        </Button>
+      </AuthLayout>
     );
   }
 
   return (
     <AuthLayout
       eyebrow="ACCOUNT RECOVERY"
-      title={success ? "Password updated" : verified ? "Set a new password" : "Verify your email"}
-      description={
-        success
-          ? "Your account is ready. Sign in with your new password."
-          : verified
-            ? "Choose a new password for your BANGLAR TOURNAMENTS account."
-            : `Enter the 6-digit code sent to ${email}.`
-      }
+      title="Set a new password"
+      description="Choose a new password for your BANGLAR TOURNAMENTS account."
       footer="Remembered your password?"
       footerAction="Back to login"
       onFooterPress={() => router.replace("/login")}
     >
-      {success ? (
-        <>
-          <Text accessibilityRole="alert" style={s.success}>
-            {success}
-          </Text>
-          <Button onPress={() => router.replace("/login")}>GO TO LOGIN</Button>
-        </>
-      ) : verified ? (
-        <>
-          <View style={{ gap: 7 }}>
-            <Text style={s.fieldLabel}>NEW PASSWORD</Text>
-            <TextInput
-              value={password}
-              onChangeText={(value) => {
-                setPassword(value);
-                setError("");
-              }}
-              placeholder="At least 8 characters"
-              placeholderTextColor="#64748B"
-              secureTextEntry
-              autoComplete="new-password"
-              textContentType="newPassword"
-              style={s.input}
-              editable={!busy}
-            />
-          </View>
-          <View style={{ gap: 7 }}>
-            <Text style={s.fieldLabel}>CONFIRM NEW PASSWORD</Text>
-            <TextInput
-              value={confirm}
-              onChangeText={(value) => {
-                setConfirm(value);
-                setError("");
-              }}
-              placeholder="Enter password again"
-              placeholderTextColor="#64748B"
-              secureTextEntry
-              autoComplete="new-password"
-              textContentType="newPassword"
-              style={s.input}
-              editable={!busy}
-            />
-          </View>
-          {error ? (
-            <Text accessibilityRole="alert" style={s.error}>
-              {error}
-            </Text>
-          ) : null}
-          <Button loading={busy} disabled={busy} onPress={submitPassword}>
-            UPDATE PASSWORD
-          </Button>
-        </>
-      ) : (
-        <>
-          <View style={{ gap: 7 }}>
-            <Text style={s.fieldLabel}>6-DIGIT VERIFICATION CODE</Text>
-            <TextInput
-              value={otp}
-              onChangeText={(value) => {
-                setOtp(value.replace(/\D/g, "").slice(0, 6));
-                setError("");
-              }}
-              placeholder="000000"
-              placeholderTextColor="#64748B"
-              keyboardType="number-pad"
-              textContentType="oneTimeCode"
-              autoComplete="one-time-code"
-              maxLength={6}
-              style={s.input}
-              editable={!verifying && !busy}
-            />
-          </View>
-          {error ? (
-            <Text accessibilityRole="alert" style={s.error}>
-              {error}
-            </Text>
-          ) : null}
-          <Button loading={verifying} disabled={verifying || busy} onPress={verifyCode}>
-            VERIFY CODE
-          </Button>
-          <Button
-            loading={busy}
-            disabled={busy || verifying}
-            onPress={resendCode}
-          >
-            RESEND CODE
-          </Button>
-        </>
-      )}
+      <View style={{ gap: 7 }}>
+        <Text style={s.fieldLabel}>NEW PASSWORD</Text>
+        <TextInput
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            setError("");
+          }}
+          placeholder="At least 8 characters"
+          placeholderTextColor="#64748B"
+          secureTextEntry
+          autoComplete="new-password"
+          textContentType="newPassword"
+          style={s.input}
+          editable={!busy}
+        />
+      </View>
+      <View style={{ gap: 7 }}>
+        <Text style={s.fieldLabel}>CONFIRM NEW PASSWORD</Text>
+        <TextInput
+          value={confirm}
+          onChangeText={(value) => {
+            setConfirm(value);
+            setError("");
+          }}
+          placeholder="Enter password again"
+          placeholderTextColor="#64748B"
+          secureTextEntry
+          autoComplete="new-password"
+          textContentType="newPassword"
+          style={s.input}
+          editable={!busy}
+        />
+      </View>
+      {error ? (
+        <Text accessibilityRole="alert" style={s.error}>{error}</Text>
+      ) : null}
+      <Button loading={busy} disabled={busy} onPress={submitPassword}>
+        UPDATE PASSWORD
+      </Button>
     </AuthLayout>
   );
 }

@@ -43,7 +43,8 @@ jobs:
         run: |
           deno check \
             supabase/functions/admin-handoff-issue/index.ts \
-            supabase/functions/admin-handoff-redeem/index.ts
+            supabase/functions/admin-handoff-redeem/index.ts \
+            supabase/functions/admin-send-notification/index.ts
 
       - name: Test handoff code security helpers
         run: deno test supabase/functions/_shared/adminHandoff.test.ts

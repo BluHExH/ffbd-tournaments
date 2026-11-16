@@ -85,6 +85,25 @@ jobs:
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --clean
 
+      - name: Add Maven Central mirror for Gradle plugin dependencies
+        working-directory: mobile
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("android/settings.gradle")
+          text = path.read_text()
+          mirror = '        maven { url "https://maven.aliyun.com/repository/central" }'
+          if mirror not in text:
+              pattern = r"(pluginManagement\\s*\\{\\s*repositories\\s*\\{)"
+              updated, count = re.subn(pattern, lambda match: match.group(1) + "\\n" + mirror, text, count=1)
+              if count != 1:
+                  raise SystemExit("Could not safely locate pluginManagement.repositories in generated settings.gradle")
+              path.write_text(updated)
+          print("Configured Maven Central mirror before the default repositories.")
+          PY
+
       - name: Configure release signing
         working-directory: mobile
         env:

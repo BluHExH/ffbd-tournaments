@@ -32,44 +32,117 @@ Notifications.setNotificationHandler({
 function DeviceServices() {
   useEffect(() => {
     const db = supabase;
-    if (!db) return;
+    if (!db) {
+      console.warn("[PushRegistration] Supabase client is unavailable.");
+      return;
+    }
+
     let mounted = true;
     let currentUserId: string | null = null;
     let heartbeat: ReturnType<typeof setInterval> | null = null;
+    let registeringPush = false;
+    let lastRegisteredUserId: string | null = null;
+    let lastRegisteredToken: string | null = null;
+
+    const describeError = (error: unknown) => {
+      if (error instanceof Error) return error.message;
+      if (typeof error === "object" && error !== null) {
+        const value = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
+        return {
+          message: typeof value.message === "string" ? value.message : "Unknown error",
+          code: value.code,
+          details: value.details,
+          hint: value.hint,
+        };
+      }
+      return String(error);
+    };
 
     const touchPresence = async () => {
       if (!currentUserId || AppState.currentState !== "active") return;
       try {
-        await db.rpc("touch_my_presence", { p_platform: Platform.OS });
-      } catch {
-        // Presence updates are best-effort and must not interrupt app use.
+        const { error } = await db.rpc("touch_my_presence", { p_platform: Platform.OS });
+        if (error) console.warn("[Presence] Update failed:", describeError(error));
+      } catch (error) {
+        console.warn("[Presence] Update threw:", describeError(error));
       }
     };
 
     const registerPush = async (userId: string) => {
-      if (!Device.isDevice) return;
+      if (!mounted || !userId || registeringPush) return;
+      if (!Device.isDevice) {
+        console.info("[PushRegistration] Skipped: this is not a physical device.");
+        return;
+      }
+
+      registeringPush = true;
+      let stage = "start";
       try {
         if (Platform.OS === "android") {
+          stage = "android-notification-channel";
           await Notifications.setNotificationChannelAsync("default", {
-            name: "General notifications", importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250], lightColor: "#FF5C00",
+            name: "General notifications",
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: "#FF5C00",
           });
         }
+
+        stage = "notification-permission";
         let permission = await Notifications.getPermissionsAsync();
         if (!permission.granted && permission.canAskAgain) {
           permission = await Notifications.requestPermissionsAsync();
         }
-        if (!permission.granted || !mounted) return;
-        const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
-        if (!projectId) return;
+        if (!permission.granted) {
+          console.warn("[PushRegistration] Permission not granted:", {
+            status: permission.status,
+            canAskAgain: permission.canAskAgain,
+          });
+          return;
+        }
+        if (!mounted) return;
+
+        stage = "expo-project-id";
+        const projectId =
+          Constants.easConfig?.projectId ??
+          Constants.expoConfig?.extra?.eas?.projectId;
+        if (!projectId) {
+          console.error("[PushRegistration] EAS projectId is missing from the app configuration.");
+          return;
+        }
+
+        stage = "expo-token";
         const token = await Notifications.getExpoPushTokenAsync({ projectId });
-        if (!mounted || !token.data) return;
-        await db.rpc("register_my_push_token", {
+        if (!mounted || !token.data) {
+          console.error("[PushRegistration] Expo returned an empty push token.");
+          return;
+        }
+
+        if (lastRegisteredUserId === userId && lastRegisteredToken === token.data) {
+          console.info("[PushRegistration] Token is already registered for the current session.");
+          return;
+        }
+
+        stage = "supabase-token-registration";
+        const { error } = await db.rpc("register_my_push_token", {
           p_token: token.data,
           p_platform: Platform.OS === "ios" ? "ios" : "android",
         });
-      } catch {
-        // Push permission or token registration must never block app startup.
+        if (error) {
+          console.error("[PushRegistration] Supabase RPC failed:", describeError(error));
+          return;
+        }
+
+        lastRegisteredUserId = userId;
+        lastRegisteredToken = token.data;
+        console.info("[PushRegistration] Token registration succeeded.", {
+          platform: Platform.OS,
+          userId,
+        });
+      } catch (error) {
+        console.error(`[PushRegistration] Failed at stage "${stage}":`, describeError(error));
+      } finally {
+        registeringPush = false;
       }
     };
 
@@ -77,21 +150,35 @@ function DeviceServices() {
       currentUserId = userId;
       if (heartbeat) clearInterval(heartbeat);
       heartbeat = null;
-      if (!userId) return;
+      if (!userId) {
+        lastRegisteredUserId = null;
+        lastRegisteredToken = null;
+        return;
+      }
       await touchPresence();
+      if (!mounted) return;
       heartbeat = setInterval(() => { void touchPresence(); }, 60_000);
       void registerPush(userId);
     };
 
-    void db.auth.getSession().then(({ data }) => {
+    void db.auth.getSession().then(({ data, error }) => {
+      if (error) console.warn("[PushRegistration] Could not read auth session:", describeError(error));
       if (mounted) void activate(data.session?.user.id ?? null);
+    }).catch((error) => {
+      console.error("[PushRegistration] Auth session lookup threw:", describeError(error));
     });
+
     const { data: auth } = db.auth.onAuthStateChange((_event, session) => {
       void activate(session?.user.id ?? null);
     });
+
     const appState = AppState.addEventListener("change", (state) => {
-      if (state === "active") void touchPresence();
+      if (state === "active") {
+        void touchPresence();
+        if (currentUserId) void registerPush(currentUserId);
+      }
     });
+
     return () => {
       mounted = false;
       if (heartbeat) clearInterval(heartbeat);
@@ -101,7 +188,6 @@ function DeviceServices() {
   }, []);
   return null;
 }
-
 function StartupScreen() {
   return (
     <View style={styles.startup}>

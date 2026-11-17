@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "768893233748",
+    "project_id": "banglar-tournaments",
+    "storage_bucket": "banglar-tournaments.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768893233748:android:e3840bf265038f35db1bc1",
+        "android_client_info": {
+          "package_name": "com.banglartournaments.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6epwBULLxaKewj6e2x6dkGLOlY3S1oiM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -62,7 +62,8 @@
             }
           ]
         }
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "ios": {
       "bundleIdentifier": "com.banglartournaments.app",

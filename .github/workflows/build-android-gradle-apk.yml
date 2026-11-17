@@ -25,9 +25,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Keep this build's published APK filename aligned with the next release serial.
-      - name: Set APK release serial
-        run: echo "APK_SERIAL=26" >> "$GITHUB_ENV"
+      # Derive the next APK number from published Gradle APK release tags.
+      # This prevents reusing APK-26 or overwriting an earlier release on later builds.
+      - name: Set next APK release serial
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          latest="$(git tag --list 'android-gradle-apk-*' | sed -nE 's/^android-gradle-apk-([0-9]+)$/\\1/p' | sort -n | tail -n 1)"
+          next="$(( ${latest:-0} + 1 ))"
+          echo "APK_SERIAL=$next" >> "$GITHUB_ENV"
+          echo "Next APK release serial: $next"
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:

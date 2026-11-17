@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags --force origin
-          latest="$(git tag --list 'android-gradle-apk-*' | sed -nE 's/^android-gradle-apk-([0-9]+)$/\\1/p' | sort -n | tail -n 1)"
+          latest="$(git tag --list 'android-gradle-apk-*' | sed -nE 's/^android-gradle-apk-([0-9]+)$/\1/p' | sort -n | tail -n 1)"
           next="$(( ${latest:-0} + 1 ))"
           echo "APK_SERIAL=$next" >> "$GITHUB_ENV"
           echo "Next APK release serial: $next"

@@ -27,7 +27,7 @@ jobs:
 
       # Keep this build's published APK filename aligned with the next release serial.
       - name: Set APK release serial
-        run: echo "APK_SERIAL=25" >> "$GITHUB_ENV"
+        run: echo "APK_SERIAL=26" >> "$GITHUB_ENV"
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:

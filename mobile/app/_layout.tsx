@@ -236,6 +236,7 @@ export default function RootLayout() {
     <LanguageProvider>
       <SafeAreaProvider>
         <StatusBar style="light" />
+        <DeviceServices />
         <AuthGate>
           <Stack
             screenOptions={{

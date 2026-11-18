@@ -28,6 +28,7 @@ export interface Tournament {
   descriptionBn?: string;
   roomId?: string | null;
   roomPassword?: string | null;
+  roomVisible?: boolean;
 }
 
 export interface TournamentRow {
@@ -56,6 +57,7 @@ export interface RoomCredentialsRow {
   tournament_id: string;
   room_id: string | null;
   room_password: string | null;
+  is_visible: boolean;
   updated_at: string;
 }
 
@@ -83,6 +85,7 @@ export function mapRowToTournament(
     descriptionBn: row.description_bn || undefined,
     roomId: credentials?.room_id ?? null,
     roomPassword: credentials?.room_password ?? null,
+    roomVisible: credentials?.is_visible ?? false,
   };
 }
 

@@ -4,7 +4,11 @@ Bangladesh Free Fire tournament platform.
 
 ## Live Website
 
-**https://ffbd-tournaments.vercel.app**
+**Production:** https://ffbd-tournaments.vercel.app
+
+**Preview (latest feature updates):** https://ffbd-tournaments-git-feature-comp-aa027c-hexs-projects-1ecb68d2.vercel.app
+
+> The preview URL contains the latest feature-branch changes and is not the production deployment.
 
 ## Social
 

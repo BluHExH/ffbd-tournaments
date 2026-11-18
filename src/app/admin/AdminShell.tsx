@@ -49,6 +49,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [unreadWalletAlerts, setUnreadWalletAlerts] = useState(0);
 
   useEffect(() => {
+    if (pathname === "/admin/login" || pathname === "/admin/mfa") return;
     let active = true;
     const loadUnread = async () => {
       const { count, error } = await db.from("admin_notifications").select("id", { count: "exact", head: true }).is("read_at", null);
@@ -59,7 +60,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "admin_notifications" }, () => { void loadUnread(); })
       .subscribe();
     return () => { active = false; void db.removeChannel(channel); };
-  }, [db]);
+  }, [db, pathname]);
 
   if (pathname === "/admin/login" || pathname === "/admin/mfa") {
     return <>{children}</>;

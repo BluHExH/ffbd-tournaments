@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Trophy,
@@ -44,6 +45,21 @@ const managementLinks = [
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [db] = useState(() => createClient());
+  const [unreadWalletAlerts, setUnreadWalletAlerts] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const loadUnread = async () => {
+      const { count, error } = await db.from("admin_notifications").select("id", { count: "exact", head: true }).is("read_at", null);
+      if (active && !error) setUnreadWalletAlerts(count ?? 0);
+    };
+    void loadUnread();
+    const channel = db.channel("admin-shell-wallet-alert-count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_notifications" }, () => { void loadUnread(); })
+      .subscribe();
+    return () => { active = false; void db.removeChannel(channel); };
+  }, [db]);
 
   if (pathname === "/admin/login" || pathname === "/admin/mfa") {
     return <>{children}</>;
@@ -112,6 +128,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all ${active ? "border border-[#FF5C00]/25 bg-[#FF5C00]/10 text-white" : "text-white/55 hover:bg-white/[0.05] hover:text-white"}`}>
                 <Icon className={`h-[18px] w-[18px] ${active ? "text-[#FF7130]" : "text-white/40 group-hover:text-white/80"}`} />
                 <span>{label}</span>
+                {href === "/admin/wallet" && unreadWalletAlerts > 0 && <span className="ml-auto min-w-5 rounded-full bg-[#FF5C00] px-1.5 py-0.5 text-center text-[10px] font-bold leading-4 text-white">{unreadWalletAlerts > 99 ? "99+" : unreadWalletAlerts}</span>}
               </Link>;
             })}
           </div>

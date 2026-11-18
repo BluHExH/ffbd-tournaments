@@ -116,7 +116,7 @@ jobs:
           lines = [line for line in properties.splitlines()
                    if not any(line.strip().startswith(key + "=") for key in settings)]
           lines.extend(f"{key}={value}" for key, value in settings.items())
-          gradle_properties.write_text("\\n".join(lines) + "\\n")
+          gradle_properties.write_text("\n".join(lines) + "\n")
           print("Enabled R8 minification, resource shrinking, PNG crunching, and ARM-only APK ABIs.")
           PY
 

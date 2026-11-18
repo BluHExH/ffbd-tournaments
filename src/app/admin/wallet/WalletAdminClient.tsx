@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
 
+type AdminNotification = { id: string; title: string; body: string; notification_type: string; related_id: string | null; read_at: string | null; created_at: string; };
+
 type WalletRequest = {
   id: string;
   user_id: string;
@@ -23,10 +25,17 @@ export function WalletAdminClient() {
   const [db] = useState(() => createClient());
   const [deposits, setDeposits] = useState<WalletRequest[]>([]);
   const [withdrawals, setWithdrawals] = useState<WalletRequest[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  const loadNotifications = useCallback(async () => {
+    const { data, error: notificationError } = await db.from("admin_notifications").select("*").order("created_at", { ascending: false }).limit(50);
+    if (notificationError) { setError(notificationError.message); return; }
+    setAdminNotifications((data ?? []) as AdminNotification[]);
+  }, [db]);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -38,9 +47,22 @@ export function WalletAdminClient() {
     setDeposits((d.data ?? []) as WalletRequest[]);
     setWithdrawals((w.data ?? []) as WalletRequest[]);
     setLoading(false);
-  }, [db]);
+    await loadNotifications();
+  }, [db, loadNotifications]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const channel = db.channel("admin-wallet-deposit-alerts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "admin_notifications" }, () => { void loadNotifications(); })
+      .subscribe();
+    return () => { void db.removeChannel(channel); };
+  }, [db, load, loadNotifications]);
+
+  async function markNotificationRead(id: string) {
+    const { error: updateError } = await db.from("admin_notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+    if (updateError) { setError(updateError.message); return; }
+    setAdminNotifications((items) => items.map((item) => item.id === id ? { ...item, read_at: new Date().toISOString() } : item));
+  }
 
   async function review(kind: "deposit" | "withdrawal", request: WalletRequest, approve: boolean) {
     const label = kind === "deposit" ? "deposit" : "withdrawal";
@@ -86,6 +108,18 @@ export function WalletAdminClient() {
     <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF7130]">Control center / Finance</p><h1 className="font-heading text-3xl font-bold text-white">Player Wallet</h1><p className="mt-2 text-sm text-white/40">Review deposits and withdrawals. Balance changes are performed by secure database functions.</p></div><button onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 px-4 text-sm text-white/65 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}/> Refresh</button></div>
     {error && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-300">{error}</p>}
     {notice && <p role="status" className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-3 text-sm text-emerald-300">{notice}</p>}
+    <section className="overflow-hidden rounded-2xl border border-[#FF7130]/20 bg-[#121C2E]">
+      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+        <div><h2 className="font-heading text-lg font-bold text-white">Admin alerts</h2><p className="mt-1 text-xs text-white/40">{adminNotifications.filter((item) => !item.read_at).length} unread · New deposit requests appear here automatically</p></div>
+        <span className="rounded-full bg-[#FF5C00]/10 px-3 py-1 text-xs font-bold text-[#FF9A66]">Live alerts</span>
+      </div>
+      {adminNotifications.length === 0 ? <p className="p-6 text-center text-sm text-white/40">No admin alerts yet. New wallet deposit requests will appear here.</p> : <div className="divide-y divide-white/[0.06]">
+        {adminNotifications.map((item) => <article key={item.id} className={`flex flex-wrap items-start justify-between gap-3 p-4 ${item.read_at ? "opacity-60" : "bg-[#FF5C00]/[0.035]"}`}>
+          <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">{item.title}</span>{!item.read_at && <span className="h-2 w-2 rounded-full bg-[#FF7130]" />}</div><p className="mt-1 text-sm text-white/60">{item.body}</p><p className="mt-1 text-[10px] text-white/30">{new Date(item.created_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })} · Request: {item.related_id || "—"}</p></div>
+          {!item.read_at && <button onClick={() => void markNotificationRead(item.id)} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/65 hover:bg-white/5">Mark read</button>}
+        </article>)}
+      </div>}
+    </section>
     {loading ? <div className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 p-12 text-sm text-white/45"><Loader2 className="h-4 w-4 animate-spin"/>Loading wallet requests…</div> : <div className="grid gap-5 xl:grid-cols-2">{section("Deposit requests", deposits, "deposit")}{section("Withdrawal requests", withdrawals, "withdrawal")}</div>}
   </main>;
 }

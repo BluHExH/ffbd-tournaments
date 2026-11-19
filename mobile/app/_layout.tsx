@@ -1,3 +1,4 @@
+import appIcon from "../banglar-tournaments-app-icon.png";
 import { useEffect, useState, type PropsWithChildren } from "react";
 import { AppState, Platform } from "react-native";
 import * as Device from "expo-device";
@@ -192,7 +193,7 @@ function StartupScreen() {
   return (
     <View style={styles.startup}>
       <Image
-        source={require("../banglar-tournaments-app-icon.png")}
+        source={appIcon}
         style={styles.logo}
         resizeMode="contain"
       />

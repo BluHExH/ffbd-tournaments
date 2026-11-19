@@ -87,6 +87,7 @@ export default async function EditTournamentPage({
             descriptionBn: t.descriptionBn || "",
             roomId: t.roomId || "",
             roomPassword: t.roomPassword || "",
+            roomVisible: t.roomVisible ?? false,
           }}
         />
       </main>

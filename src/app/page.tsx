@@ -15,9 +15,8 @@ import PrizeBadge from "@/components/PrizeBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useLanguage } from "@/context/LanguageContext";
 import { sponsors, teams as seedTeams, winners as seedWinners, stats as seedStats } from "@/data/seed";
-import type { Team } from "@/types/tournament";
 import { createClient } from "@/lib/supabase/client";
-import { mapRowToTournament, type TournamentRow, type Tournament } from "@/types/tournament";
+import { mapRowToTournament, type TournamentRow, type Tournament, type Team } from "@/types/tournament";
 import { formatBDT, formatNumber } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
 
@@ -27,8 +26,8 @@ type HomepagePayout = { id: string; name: string; team: string | null; amount: n
 export default function HomePage() {
   const { t, lang } = useLanguage();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [homepageStats, setHomepageStats] = useState<HomepageStats | null>(null);
   const [teams, setTeams] = useState<Team[]>(seedTeams);
+  const [homepageStats, setHomepageStats] = useState<HomepageStats | null>(null);
   const [winners, setWinners] = useState<HomepagePayout[]>(seedWinners.map((winner) => ({ ...winner, team: winner.team ?? null })));
 
   useEffect(() => {
@@ -152,24 +151,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="relative py-20 md:py-28 overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(160deg,#0B1221_0%,#121C2E_50%,#0B1221_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.12),transparent_60%)]" />
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={homepageStats?.stats_section_title || t("stats.title")} light />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-16">
-              <StatCounter value={prizePoolPaid} label={homepageStats?.prize_pool_label || t("hero.stat1")} suffix="+" />
-              <StatCounter value={teamsRegistered} label={homepageStats?.teams_registered_label || t("hero.stat2")} suffix="+" />
-              <StatCounter value={tournamentsHeld} label={homepageStats?.tournaments_held_label || t("hero.stat3")} suffix="+" />
-            </div>
-          </div>
-        </section>
-
-        {/* Teams */}
-        <section id="winners" className="section-white py-16 md:py-24">
+        {/* Teams — cards retained without the Top Teams heading */}
+        <section className="section-white py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={homepageStats?.teams_section_title || t("teams.title")} />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
               {teams.map((team) => (
                 <TeamCard key={team.id} team={team} />
@@ -203,9 +187,9 @@ export default function HomePage() {
         </section>}
 
         {/* Payouts */}
-        <section className="section-light py-16 md:py-20">
+        <section id="winners" className="section-light py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeading title={homepageStats?.payouts_section_title || t("payout.title")} />
+            <SectionHeading title={lang === "bn" ? "সাম্প্রতিক বিজয়ীরা" : "Recent Winners"} />
             <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
               {winners.map((w) => (
                 <div key={w.id} className="card-light shrink-0 min-w-[240px] p-4 flex items-center gap-3 hover:shadow-md transition-shadow">

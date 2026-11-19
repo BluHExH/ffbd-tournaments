@@ -26,6 +26,7 @@ export type TournamentFormData = {
   descriptionBn: string;
   roomId: string;
   roomPassword: string;
+  roomVisible: boolean;
 };
 
 const MODES: TournamentMode[] = ["Solo", "Duo", "Squad"];
@@ -79,6 +80,7 @@ export function TournamentForm({
     descriptionBn: initial?.descriptionBn || "",
     roomId: initial?.roomId || "",
     roomPassword: initial?.roomPassword || "",
+    roomVisible: initial?.roomVisible ?? false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -189,6 +191,7 @@ export function TournamentForm({
               tournament_id: tournamentId,
               room_id: form.roomId.trim() || null,
               room_password: form.roomPassword.trim() || null,
+              is_visible: form.roomVisible,
             },
             { onConflict: "tournament_id" }
           );
@@ -283,6 +286,10 @@ export function TournamentForm({
             <input value={form.roomPassword} onChange={(e) => update("roomPassword", e.target.value)} className={inputCls} placeholder="2569" autoComplete="off" />
           </Field>
         </div>
+        <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-white/75">
+          <input type="checkbox" checked={form.roomVisible} onChange={(e) => update("roomVisible", e.target.checked)} className="h-4 w-4 accent-[#FF5C00]" />
+          <span><span className="block font-semibold text-white">Show Room ID & Password to confirmed players</span><span className="mt-0.5 block text-xs text-white/40">Off থাকলে কোনো player credentials দেখতে পাবে না। On করলে শুধু এই tournament-এর confirmed player দেখতে পারবে।</span></span>
+        </label>
       </Section>
 
       <Section title="Extra">

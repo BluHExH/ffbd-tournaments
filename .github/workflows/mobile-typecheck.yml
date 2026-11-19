@@ -1,0 +1,38 @@
+name: Mobile Typecheck
+
+on:
+  push:
+    branches:
+      - feature/common-admin-portal
+  pull_request:
+    branches:
+      - feature/complete-player-wallet
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-typecheck.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-typecheck:
+    name: Validate mobile TypeScript
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+
+      - name: Run TypeScript checks
+        working-directory: mobile
+        run: npm run typecheck

@@ -29,16 +29,20 @@ const storage = {
   },
 };
 
-export const supabase = url && key
-  ? createClient(url, key, {
-      auth: {
-        storage,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-        lock: processLock,
-      },
-    })
-  : null;
+export const supabase =
+  url && key
+    ? createClient(url, key, {
+        auth: {
+          storage,
+          autoRefreshToken: true,
+          persistSession: true,
+          // Required for RN: process recovery/deep links manually
+          detectSessionInUrl: false,
+          // Prefer query ?code= over hash tokens (Android strips #fragments)
+          flowType: "pkce",
+          lock: processLock,
+        },
+      })
+    : null;
 
 export const hasSupabaseConfig = Boolean(url && key);

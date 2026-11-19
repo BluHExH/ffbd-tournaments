@@ -8,6 +8,11 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "icon": "./banglar-tournaments-app-icon.png",
+    "splash": {
+      "image": "./banglar-tournaments-app-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#07110B"
+    },
     "platforms": [
       "ios",
       "android",
@@ -21,15 +26,44 @@
           "configureAndroidBackup": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./banglar-tournaments-app-icon.png",
+          "color": "#FF5C00",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "android": {
       "package": "com.banglartournaments.app",
-      "icon": "./banglar-tournaments-app-icon.png",
+      "icon": "./banglar-tournaments-app-icon-padded.png",
       "adaptiveIcon": {
-        "foregroundImage": "./banglar-tournaments-app-icon.png",
+        "foregroundImage": "./banglar-tournaments-app-icon-padded.png",
         "backgroundColor": "#07110B"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "banglartournaments",
+              "host": "reset-password"
+            },
+            {
+              "scheme": "banglartournaments",
+              "pathPrefix": "/reset-password"
+            }
+          ]
+        }
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "ios": {
       "bundleIdentifier": "com.banglartournaments.app",

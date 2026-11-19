@@ -1,7 +1,11 @@
 name: Build Android APK
+# APK assets use a unique run-number filename.
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/complete-player-wallet
 
 permissions:
   contents: write
@@ -13,6 +17,7 @@ concurrency:
 jobs:
   build-android-apk:
     name: Build Android APK
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]')
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -28,6 +33,34 @@ jobs:
       - name: Install mobile dependencies
         working-directory: mobile
         run: npm ci
+
+      - name: Validate mobile TypeScript
+        working-directory: mobile
+        run: npm run typecheck
+
+      - name: Generate padded Android launcher icon
+        run: |
+          python -m pip install --quiet Pillow
+          python - <<'PY'
+          from PIL import Image
+          source = Image.open("mobile/banglar-tournaments-app-icon.png").convert("RGBA")
+          canvas = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+          artwork = source.copy()
+          artwork.thumbnail((740, 740), Image.Resampling.LANCZOS)
+          canvas.alpha_composite(artwork, ((1024 - artwork.width) // 2, (1024 - artwork.height) // 2))
+          canvas.save("mobile/banglar-tournaments-app-icon-padded.png", optimize=True)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/banglar-tournaments-app-icon-padded.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate smaller Android launcher icon"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Validate Android Expo bundle
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir /tmp/banglar-expo-export
 
       - name: Build Android APK with EAS
         working-directory: mobile
@@ -56,8 +89,10 @@ jobs:
           DOWNLOAD_JSON="$(npx --yes eas-cli@latest build:download --id "$EAS_BUILD_ID" --non-interactive --json)"
           APK_SOURCE="$(node -e 'const result = JSON.parse(process.argv[1]); if (!result.path) process.exit(1); process.stdout.write(result.path);' "$DOWNLOAD_JSON")"
           test -f "$APK_SOURCE"
-          cp "$APK_SOURCE" ./artifacts/BANGLAR-TOURNAMENTS.apk
-          ls -lh ./artifacts/BANGLAR-TOURNAMENTS.apk
+          APK_NAME="BANGLAR-TOURNAMENTS-APK-${GITHUB_RUN_NUMBER}.apk"
+          cp "$APK_SOURCE" "./artifacts/$APK_NAME"
+          echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
+          ls -lh "./artifacts/$APK_NAME"
 
       - name: Publish APK to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -66,4 +101,4 @@ jobs:
           name: "Android APK build #${{ github.run_number }}"
           prerelease: true
           make_latest: false
-          files: mobile/artifacts/BANGLAR-TOURNAMENTS.apk
+          files: mobile/artifacts/${{ env.APK_NAME }}

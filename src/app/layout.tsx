@@ -1,4 +1,26 @@
 import type { Metadata } from "next";
+import { Hind_Siliguri, Inter, Rajdhani } from "next/font/google";
+
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["latin", "bengali"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-rajdhani",
+  display: "swap",
+});
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -36,14 +58,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${hindSiliguri.variable} ${inter.variable} ${rajdhani.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link rel="icon" href={BRAND.logo} type="image/jpeg" />
         <link rel="apple-touch-icon" href={BRAND.logo} />
       </head>

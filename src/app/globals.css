@@ -28,9 +28,9 @@
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-chip: 9999px;
-  --font-heading: "Rajdhani", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-bangla: "Hind Siliguri", "Inter", system-ui, sans-serif;
+  --font-heading: var(--font-rajdhani), system-ui, sans-serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-bangla: var(--font-hind-siliguri), var(--font-inter), system-ui, sans-serif;
 }
 
 @theme inline {

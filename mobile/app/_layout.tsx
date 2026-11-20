@@ -269,13 +269,8 @@ function AuthGate({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (hasSession === null) return;
-    let active = true;
     const first = segments[0] as string | undefined;
     const recoveryRoute = first === "reset-password";
-    const tab = (segments as unknown as string[])[1];
-    // Guests may browse public tournament pages; wallet and account remain gated.
-    const publicRoute = first === "(tabs)" &&
-      (!tab || tab === "index" || tab === "tournaments" || tab === "results");
     const authRoute =
       first === "login" ||
       first === "register" ||
@@ -291,20 +286,14 @@ function AuthGate({ children }: PropsWithChildren) {
         router.replace("/(tabs)");
         return;
       }
-      if (!hasSession && !authRoute && !publicRoute) router.replace("/login");
+      if (!hasSession && !authRoute) router.replace("/login");
     };
     void routeUser();
-    return () => {
-      active = false;
-    };
   }, [hasSession, segments, router]);
 
   if (hasSession === null) return <StartupScreen />;
 
   const first = segments[0] as string | undefined;
-  const tab = (segments as unknown as string[])[1];
-  const publicRoute = first === "(tabs)" &&
-    (!tab || tab === "index" || tab === "tournaments" || tab === "results");
   const recoveryRoute = first === "reset-password";
   const authRoute =
     first === "login" ||
@@ -312,7 +301,7 @@ function AuthGate({ children }: PropsWithChildren) {
     first === "forgot-password" ||
     recoveryRoute;
 
-  if ((hasSession && authRoute && !recoveryRoute) || (!hasSession && !authRoute && !publicRoute))
+  if ((hasSession && authRoute && !recoveryRoute) || (!hasSession && !authRoute))
     return <StartupScreen />;
 
   return <>{children}</>;

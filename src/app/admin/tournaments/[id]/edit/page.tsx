@@ -77,7 +77,6 @@ export default async function EditTournamentPage({
             entryFee: t.entryFee,
             prizePool: t.prizePool,
             slots: t.slots,
-            slotsFilled: t.slotsFilled,
             status: t.status,
             startAt: t.startAt,
             cover: t.cover,

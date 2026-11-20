@@ -121,6 +121,22 @@ $$;
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 
+
+-- Require elevated MFA assurance for administrator database access.
+CREATE OR REPLACE FUNCTION public.is_admin_aal2()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT public.is_admin()
+     AND coalesce(auth.jwt() ->> 'aal', '') = 'aal2';
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin_aal2() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin_aal2() TO authenticated;
+
 -- ============================================================
 -- 5. Row Level Security
 -- ============================================================
@@ -160,39 +176,39 @@ CREATE POLICY "tournaments_select_public"
 CREATE POLICY "tournaments_insert_admin"
   ON public.tournaments FOR INSERT
   TO authenticated
-  WITH CHECK (public.is_admin());
+  WITH CHECK (public.is_admin_aal2());
 
 CREATE POLICY "tournaments_update_admin"
   ON public.tournaments FOR UPDATE
   TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
+  USING (public.is_admin_aal2())
+  WITH CHECK (public.is_admin_aal2());
 
 CREATE POLICY "tournaments_delete_admin"
   ON public.tournaments FOR DELETE
   TO authenticated
-  USING (public.is_admin());
+  USING (public.is_admin_aal2());
 
 CREATE POLICY "room_credentials_select_admin"
   ON public.tournament_room_credentials FOR SELECT
   TO authenticated
-  USING (public.is_admin());
+  USING (public.is_admin_aal2());
 
 CREATE POLICY "room_credentials_insert_admin"
   ON public.tournament_room_credentials FOR INSERT
   TO authenticated
-  WITH CHECK (public.is_admin());
+  WITH CHECK (public.is_admin_aal2());
 
 CREATE POLICY "room_credentials_update_admin"
   ON public.tournament_room_credentials FOR UPDATE
   TO authenticated
-  USING (public.is_admin())
-  WITH CHECK (public.is_admin());
+  USING (public.is_admin_aal2())
+  WITH CHECK (public.is_admin_aal2());
 
 CREATE POLICY "room_credentials_delete_admin"
   ON public.tournament_room_credentials FOR DELETE
   TO authenticated
-  USING (public.is_admin());
+  USING (public.is_admin_aal2());
 
 -- ============================================================
 -- 6. Table grants

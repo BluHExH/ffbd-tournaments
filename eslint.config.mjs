@@ -7,7 +7,20 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    ignores: [
+      "**/.next/**",
+      "**/.expo/**",
+      "**/out/**",
+      "**/build/**",
+      "**/next-env.d.ts",
+    ],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["mobile/**/*.{js,jsx,ts,tsx}"],
+    rules: { "jsx-a11y/alt-text": "off" },
+  },
 ];
 
 export default eslintConfig;

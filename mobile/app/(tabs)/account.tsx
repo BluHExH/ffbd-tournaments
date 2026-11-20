@@ -1,4 +1,4 @@
-﻿import {useEffect,useState} from "react";
+import {useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {Pressable,StyleSheet,Text,View} from "react-native";
@@ -22,7 +22,7 @@ export default function Account(){
  const {t}=useLanguage();
  const [email,setEmail]=useState<string|null>(null);
  const [username,setUsername]=useState<string|null>(null);
- const [admin,setAdmin]=useState(false);
+
 
  useEffect(()=>{
   if(!supabase)return;
@@ -35,18 +35,15 @@ export default function Account(){
    setEmail(data.user?.email??null);
 
    if(data.user){
-    const [{data:profile},{data:adminRow}]=await Promise.all([
-     supabase!.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle(),
-     supabase!.from("admins").select("id").eq("id",data.user.id).maybeSingle()
-    ]);
+    const {data:profile}=await supabase!.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle();
 
     if(active){
      setUsername(profile?.username?.trim()||null);
-     setAdmin(Boolean(adminRow));
+
     }
    }else if(active){
     setUsername(null);
-    setAdmin(false);
+
    }
   };
 
@@ -63,7 +60,7 @@ export default function Account(){
   await supabase?.auth.signOut();
   setEmail(null);
   setUsername(null);
-  setAdmin(false);
+
  };
 
  const groups:{title:string;items:MenuItem[]}[]=[

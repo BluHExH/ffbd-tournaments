@@ -16,7 +16,6 @@ export type TournamentFormData = {
   entryFee: number;
   prizePool: number;
   slots: number;
-  slotsFilled: number;
   status: TournamentStatus;
   startAt: string;
   cover: string;
@@ -70,7 +69,6 @@ export function TournamentForm({
     entryFee: initial?.entryFee ?? 0,
     prizePool: initial?.prizePool ?? 0,
     slots: initial?.slots ?? 48,
-    slotsFilled: initial?.slotsFilled ?? 0,
     status: initial?.status || "upcoming",
     startAt: initial?.startAt || new Date(Date.now() + 86400000).toISOString(),
     cover: initial?.cover || "",
@@ -114,9 +112,7 @@ export function TournamentForm({
     if (!Number.isInteger(form.slots) || form.slots < 1) {
       return "Slots must be at least 1.";
     }
-    if (!Number.isInteger(form.slotsFilled) || form.slotsFilled < 0 || form.slotsFilled > form.slots) {
-      return "Slots filled must be between 0 and total slots.";
-    }
+
     if (!form.startAt || Number.isNaN(new Date(form.startAt).getTime())) {
       return "Invalid start date/time.";
     }
@@ -144,7 +140,6 @@ export function TournamentForm({
       entry_fee: Number(form.entryFee) || 0,
       prize_pool: Number(form.prizePool) || 0,
       slots: Number(form.slots) || 0,
-      slots_filled: Number(form.slotsFilled) || 0,
       status: form.status,
       start_at: new Date(form.startAt).toISOString(),
       cover: form.cover.trim() || null,
@@ -160,7 +155,7 @@ export function TournamentForm({
       if (mode === "create") {
         const { data: created, error: insertError } = await supabase
           .from("tournaments")
-          .insert(payload)
+          .insert({ ...payload, slots_filled: 0 })
           .select("id")
           .single();
 
@@ -260,9 +255,7 @@ export function TournamentForm({
           <Field label="TotalSlots">
             <input type="number" min={1} value={form.slots} onChange={(e) => update("slots", Number(e.target.value))} className={inputCls} />
           </Field>
-          <Field label="Slots Filled">
-            <input type="number" min={0} value={form.slotsFilled === 0 ? "" : form.slotsFilled} onChange={(e) => update("slotsFilled", e.target.value === "" ? 0 : Number(e.target.value))} className={inputCls} />
-          </Field>
+
         </div>
         <Field label="Start Date and Time" required>
           <input type="datetime-local" required value={toLocalDatetimeValue(form.startAt)} onChange={(e) => {

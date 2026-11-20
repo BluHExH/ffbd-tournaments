@@ -6,7 +6,7 @@ import { UserPlus, CreditCard, KeyRound, Trophy, ChevronRight } from "lucide-rea
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TournamentCard from "@/components/TournamentCard";
-import StatCounter from "@/components/StatCounter";
+
 import SectionHeading from "@/components/SectionHeading";
 import TeamCard from "@/components/TeamCard";
 import LiveBadge from "@/components/LiveBadge";

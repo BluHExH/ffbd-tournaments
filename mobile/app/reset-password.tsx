@@ -134,6 +134,7 @@ export default function ResetPassword() {
     };
   }, [
     processRecovery,
+    params,
     params.code,
     params.access_token,
     params.refresh_token,

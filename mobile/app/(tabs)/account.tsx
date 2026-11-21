@@ -1,4 +1,4 @@
-import {useEffect,useState} from "react";
+import {useCallback,useEffect,useState} from "react";
 import {router} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {Pressable,StyleSheet,Text,View} from "react-native";
@@ -24,37 +24,21 @@ export default function Account(){
  const [username,setUsername]=useState<string|null>(null);
 
 
+ const load=useCallback(async()=>{
+  if(!supabase)return;
+  const {data}=await supabase.auth.getUser();
+  setEmail(data.user?.email??null);
+  if(data.user){
+   const {data:profile}=await supabase.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle();
+   setUsername(profile?.username?.trim()||null);
+  }else setUsername(null);
+ },[]);
  useEffect(()=>{
   if(!supabase)return;
-  let active=true;
-
-  const load=async()=>{
-   const {data}=await supabase!.auth.getUser();
-   if(!active)return;
-
-   setEmail(data.user?.email??null);
-
-   if(data.user){
-    const {data:profile}=await supabase!.from("player_profiles").select("username").eq("user_id",data.user.id).maybeSingle();
-
-    if(active){
-     setUsername(profile?.username?.trim()||null);
-
-    }
-   }else if(active){
-    setUsername(null);
-
-   }
-  };
-
   void load();
   const {data:sub}=supabase.auth.onAuthStateChange(()=>{void load()});
-
-  return()=>{
-   active=false;
-   sub.subscription.unsubscribe();
-  };
- },[]);
+  return()=>sub.subscription.unsubscribe();
+ },[load]);
 
  const logout=async()=>{
   await supabase?.auth.signOut();
@@ -83,7 +67,7 @@ export default function Account(){
   ]}
  ];
 
- return <Screen>
+ return <Screen onRefresh={load}>
   <Muted>{t("profile.playerAccount").toUpperCase()}</Muted>
   <Heading>{t("profile.title")}</Heading>
 

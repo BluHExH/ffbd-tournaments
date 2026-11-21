@@ -48,7 +48,8 @@ BEGIN
   IF NOT public.is_admin_aal2() THEN
     RAISE EXCEPTION 'Elevated administrator access required';
   END IF;
-  IF p_tournament_id IS NULL OR jsonb_typeof(p_results) <> 'array'
+  IF p_tournament_id IS NULL OR p_results IS NULL
+     OR jsonb_typeof(p_results) IS DISTINCT FROM 'array'
      OR jsonb_array_length(p_results) = 0 THEN
     RAISE EXCEPTION 'Select a tournament and add at least one result';
   END IF;

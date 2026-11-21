@@ -103,7 +103,7 @@ export default function Wallet(){
   setMessage("Withdrawal request submitted. The amount is reserved until admin review.");
   setWithdrawAmount("");setRecipient("");await load();
  };
- if(!userId&&!loading)return <Screen><Muted>{t("wallet.finance")}</Muted><Heading>{t("wallet.title")}</Heading><Card><Subheading>{t("wallet.signIn")}</Subheading><Muted>{t("wallet.signInHint")}</Muted></Card></Screen>;
+ if(!userId&&!loading)return <Screen onRefresh={load}><Muted>{t("wallet.finance")}</Muted><Heading>{t("wallet.title")}</Heading><Card><Subheading>{t("wallet.signIn")}</Subheading><Muted>{t("wallet.signInHint")}</Muted></Card></Screen>;
  return <Screen>
   <Muted>PLAYER FINANCE</Muted><Heading>My Wallet</Heading>
   <Card><Muted>{t("wallet.balance")}</Muted><Heading>{loading?"…":money(balance)}</Heading><Muted>{t("wallet.server")}</Muted><Button onPress={()=>void load()} disabled={loading}>{t("wallet.refresh")}</Button></Card>

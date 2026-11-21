@@ -110,7 +110,7 @@ export function TournamentResultsManager({ tournaments }: { tournaments: Tournam
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div><div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF7130]"><Trophy className="h-3.5 w-3.5"/> Prize distribution</div>
         <h2 className="font-heading text-xl font-bold text-white">Finalize Results &amp; Award Prizes</h2>
-        <p className="mt-1 text-sm text-white/45">Verified results are saved and each prize is credited to the registered captain's wallet.</p></div>
+        <p className="mt-1 text-sm text-white/45">Verified results are saved and each prize is credited to the registered captain&apos;s wallet.</p></div>
       <button onClick={() => tournamentId && void load(tournamentId)} disabled={!tournamentId || loading} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs text-white/65 disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}/> Refresh</button>
     </div>
     <label className="block max-w-xl"><span className="mb-1.5 block text-xs text-white/55">Tournament</span>
@@ -124,7 +124,7 @@ export function TournamentResultsManager({ tournaments }: { tournaments: Tournam
     : loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-white/45"><Loader2 className="h-4 w-4 animate-spin"/>Loading registered captains…</div>
     : finalized ? <div className="mt-5 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-4">
       <div className="flex items-center gap-2 text-sm font-bold text-emerald-300"><CheckCircle2 className="h-4 w-4"/> Results finalized</div>
-      <p className="mt-2 text-xs text-white/50">Prize awards have been posted to the registered captains' wallet ledger. This tournament cannot be finalized again.</p>
+      <p className="mt-2 text-xs text-white/50">Prize awards have been posted to the registered captains&apos; wallet ledger. This tournament cannot be finalized again.</p>
       <div className="mt-4 space-y-2">{saved.map((row) => <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="text-white/75">#{row.rank} · {row.team_name || row.participant_name}</span><span className="font-semibold text-emerald-300">{money(row.prize_amount)}</span></div>)}</div>
     </div>
     : <>
@@ -147,7 +147,7 @@ export function TournamentResultsManager({ tournaments }: { tournaments: Tournam
         <button onClick={() => setConfirm(true)} disabled={!selectedDrafts.length || saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#FF5C00] px-5 text-sm font-bold text-white disabled:opacity-40">{saving && <Loader2 className="h-4 w-4 animate-spin"/>}Preview &amp; Finalize</button>
       </div>
       {confirm && <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
-        <h3 className="font-bold text-amber-200">Confirm prize distribution</h3><p className="mt-2 text-sm text-white/65">This permanently publishes {selectedDrafts.length} result(s) and credits {money(totalPrize)} across the selected registered captains' wallets. This action cannot be repeated.</p>
+        <h3 className="font-bold text-amber-200">Confirm prize distribution</h3><p className="mt-2 text-sm text-white/65">This permanently publishes {selectedDrafts.length} result(s) and credits {money(totalPrize)} across the selected registered captains&apos; wallets. This action cannot be repeated.</p>
         <div className="mt-3 space-y-1">{selectedDrafts.map((row) => { const person=activeParticipants.find((item)=>item.id===row.participant_id); return <p key={row.participant_id} className="text-xs text-white/65">Rank {row.rank}: {person?.team_name || person?.display_name} — {money(Number(row.prize_amount)||0)}</p>; })}</div>
         <div className="mt-4 flex gap-2"><button onClick={() => void finalize()} disabled={saving} className="rounded-lg bg-[#FF5C00] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirm &amp; award</button><button onClick={() => setConfirm(false)} className="rounded-lg border border-white/10 px-4 py-2.5 text-xs text-white/70">Go back</button></div>
       </div>}

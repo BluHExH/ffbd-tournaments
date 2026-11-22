@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
-import type { TournamentMode, TournamentStatus, MapName } from "@/types/tournament";
+import type { TournamentMode, TournamentStatus, MapName, TournamentCategory } from "@/types/tournament";
 
 export type TournamentFormData = {
   id?: string;
@@ -13,6 +13,7 @@ export type TournamentFormData = {
   title: string;
   titleBn: string;
   mode: TournamentMode;
+  category: TournamentCategory;
   entryFee: number;
   prizePool: number;
   slots: number;
@@ -29,6 +30,14 @@ export type TournamentFormData = {
 };
 
 const MODES: TournamentMode[] = ["Solo", "Duo", "Squad"];
+const CATEGORIES: { value: TournamentCategory; label: string }[] = [
+  { value: "br_match", label: "BR MATCH" },
+  { value: "clash_squad", label: "CLASH SQUAD" },
+  { value: "lone_wolf", label: "LONE WOLF" },
+  { value: "cs_1v1_2v2", label: "CS 1V1 / 2V2" },
+  { value: "lw_headshot", label: "LW HEADSHOT" },
+  { value: "cs_headshot", label: "CS HEADSHOT" },
+];
 const STATUSES: TournamentStatus[] = ["upcoming", "live", "ended"];
 const MAPS: MapName[] = ["Bermuda", "Purgatory", "Kalahari", "Alpine"];
 
@@ -66,6 +75,7 @@ export function TournamentForm({
     title: initial?.title || "",
     titleBn: initial?.titleBn || "",
     mode: initial?.mode || "Squad",
+    category: initial?.category || "br_match",
     entryFee: initial?.entryFee ?? 0,
     prizePool: initial?.prizePool ?? 0,
     slots: initial?.slots ?? 48,
@@ -137,6 +147,7 @@ export function TournamentForm({
       title: form.title.trim(),
       title_bn: form.titleBn.trim(),
       mode: form.mode,
+      category: form.category,
       entry_fee: Number(form.entryFee) || 0,
       prize_pool: Number(form.prizePool) || 0,
       slots: Number(form.slots) || 0,
@@ -226,7 +237,12 @@ export function TournamentForm({
       </Section>
 
       <Section title="Tournament Settings">
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Field label="Tournament Category">
+            <select value={form.category} onChange={(e) => update("category", e.target.value as TournamentCategory)} className={inputCls}>
+              {CATEGORIES.map((category) => (<option key={category.value} value={category.value}>{category.label}</option>))}
+            </select>
+          </Field>
           <Field label="Mode">
             <select value={form.mode} onChange={(e) => update("mode", e.target.value as TournamentMode)} className={inputCls}>
               {MODES.map((m) => (<option key={m} value={m}>{m}</option>))}

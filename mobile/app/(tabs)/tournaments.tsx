@@ -9,7 +9,7 @@ import {theme} from "@/lib/theme";
 import {BRAND} from "@/lib/brand";
 import {useLanguage} from "@/lib/i18n";
 type Category="br_match"|"clash_squad"|"lone_wolf"|"cs_1v1_2v2"|"lw_headshot"|"cs_headshot";
-type Row={id:string;uid:string;slug:string;title:string;title_bn:string;mode:"Solo"|"Duo"|"Squad";category:Category;entry_fee:number;prize_pool:number;slots:number;slots_filled:number;status:"live"|"upcoming"|"ended";start_at:string;map:string};
+type Row={id:string;uid:string;slug:string;title:string;title_bn:string;cover:string|null;mode:"Solo"|"Duo"|"Squad";category:Category;entry_fee:number;prize_pool:number;slots:number;slots_filled:number;status:"live"|"upcoming"|"ended";start_at:string;map:string};
 type Status="all"|"live"|"upcoming"|"ended";type Entry="all"|"free"|"paid";type Sort="soon"|"prize"|"entry";
 const CATEGORIES:{id:Category;title:string;description:string;icon:keyof typeof Ionicons.glyphMap}[]=[
  {id:"br_match",title:"BR MATCH",description:"Solo · Duo · Squad",icon:"shield-outline"},
@@ -25,7 +25,7 @@ export default function Tournaments(){
  const {t:translate}=useLanguage();
  const [rows,setRows]=useState<Row[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[category,setCategory]=useState<Category|null>(null);
  const [query,setQuery]=useState(""),[status,setStatus]=useState<Status>("all"),[mode,setMode]=useState("all"),[entry,setEntry]=useState<Entry>("all"),[map,setMap]=useState("all"),[sort,setSort]=useState<Sort>("soon"),[visible,setVisible]=useState(12),[filtersOpen,setFiltersOpen]=useState(false);
- const load=useCallback(async()=>{if(!supabase){setError("Supabase configuration is missing.");setLoading(false);return}setLoading(true);const {data,error}=await supabase.from("tournaments").select("id,uid,slug,title,title_bn,mode,category,entry_fee,prize_pool,slots,slots_filled,status,start_at,map").order("start_at",{ascending:true});if(error)setError(error.message);else{setError("");setRows((data??[]) as Row[])}setLoading(false)},[]);
+ const load=useCallback(async()=>{if(!supabase){setError("Supabase configuration is missing.");setLoading(false);return}setLoading(true);const {data,error}=await supabase.from("tournaments").select("id,uid,slug,title,title_bn,cover,mode,category,entry_fee,prize_pool,slots,slots_filled,status,start_at,map").order("start_at",{ascending:true});if(error)setError(error.message);else{setError("");setRows((data??[]) as Row[])}setLoading(false)},[]);
  useEffect(()=>{void load()},[load]);
  const filtered=useMemo(()=>{const list=rows.filter(t=>(t.category||"br_match")===category&&(status==="all"||t.status===status)&&(mode==="all"||t.mode===mode)&&(entry==="all"||(entry==="free"?t.entry_fee===0:t.entry_fee>0))&&(map==="all"||t.map===map)&&(!query.trim()||[t.title,t.title_bn,t.mode,t.map,t.uid].some(v=>String(v??"").toLowerCase().includes(query.trim().toLowerCase()))));if(sort==="prize")list.sort((a,b)=>b.prize_pool-a.prize_pool);else if(sort==="entry")list.sort((a,b)=>a.entry_fee-b.entry_fee);else list.sort((a,b)=>new Date(a.start_at).getTime()-new Date(b.start_at).getTime());return list},[rows,category,status,mode,entry,map,query,sort]);
  const reset=()=>{setQuery("");setStatus("all");setMode("all");setEntry("all");setMap("all");setSort("soon");setVisible(12)};

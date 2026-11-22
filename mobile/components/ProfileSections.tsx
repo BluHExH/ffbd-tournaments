@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useState} from "react";
 import {router} from "expo-router";
 import {ActivityIndicator,Image,Linking,Pressable,StyleSheet,Text,TextInput,View} from "react-native";
+import {Ionicons} from "@expo/vector-icons";
 import {Card,Heading,Muted,Subheading,Button} from "@/components/UI";
 import {Screen} from "@/components/Screen";
 import {supabase} from "@/lib/supabase";
@@ -60,15 +61,12 @@ export function PlayerCareerSection(){
   setLoading(true);setError("");
   const {data:user,error:userError}=await supabase.auth.getUser();
   if(userError||!user.user){setError("Sign in to view your Player Career.");setMatches(0);setEarnings(0);setWins(0);setLoading(false);return}
-  const [participations,results]=await Promise.all([
-   supabase.from("tournament_participants").select("id,tournaments!inner(status)").eq("user_id",user.user.id).in("status",["registered","confirmed"]).eq("tournaments.status","ended"),
-   supabase.from("tournament_results").select("prize_amount,rank,finalized_at").eq("user_id",user.user.id).not("finalized_at","is",null)
-  ]);
-  if(participations.error||results.error){setError(participations.error?.message||results.error?.message||"Unable to load career statistics.");setLoading(false);return}
-  const verified=results.data??[];
-  setMatches(participations.data?.length??0);
+  const {data:results,error:resultsError}=await supabase.from("tournament_results").select("prize_amount,rank,finalized_at").eq("user_id",user.user.id).not("finalized_at","is",null);
+  if(resultsError){setError(resultsError.message||"Unable to load career statistics.");setLoading(false);return}
+  const verified=results??[];
+  setMatches(verified.length);
   setEarnings(verified.reduce((sum,row)=>sum+Number(row.prize_amount||0),0));
-  setWins(verified.filter(row=>row.rank===1).length);
+  setWins(verified.filter(row=>Number(row.rank)===1).length);
   setLoading(false);
  },[]);
  useEffect(()=>{void load()},[load]);
@@ -77,7 +75,7 @@ export function PlayerCareerSection(){
    <View style={{flex:1}}><Card><Ionicons name="game-controller-outline" size={22} color={theme.accent}/><Text style={{color:"#fff",fontSize:25,fontWeight:"900",marginTop:8}}>{matches}</Text><Muted>MATCHES PLAYED</Muted></Card></View>
    <View style={{flex:1}}><Card><Ionicons name="wallet-outline" size={22} color={theme.gold}/><Text style={{color:theme.gold,fontSize:23,fontWeight:"900",marginTop:8}}>{money(earnings*100)}</Text><Muted>TOTAL EARNINGS</Muted></Card></View>
   </View>
-  <Card><View style={s.between}><Subheading>Verified wins</Subheading><Text style={s.prize}>{wins}</Text></View><Muted>Statistics use completed tournaments joined and admin-finalized results linked to your account.</Muted></Card>
+  <Card><View style={s.between}><Subheading>Verified wins</Subheading><Text style={s.prize}>{wins}</Text></View><Muted>Statistics count only admin-finalized tournament results linked to your account.</Muted></Card>
  </>}{error?<Text style={s.error}>{error}</Text>:null}</Screen>;
 }
 

@@ -1,10 +1,11 @@
 name: Build Android APK (Gradle)
-# Tagged pushes and explicit build commits build the latest mobile source on the feature branch.
+# Build the latest mobile source from main or the legacy feature branch.
 
 on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - feature/common-admin-portal
 
 permissions:
@@ -17,7 +18,7 @@ concurrency:
 jobs:
   build-android-apk:
     name: Build signed Android APK with Gradle
-    if: github.ref == 'refs/heads/feature/common-admin-portal' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]'))
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/common-admin-portal') && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]'))
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository

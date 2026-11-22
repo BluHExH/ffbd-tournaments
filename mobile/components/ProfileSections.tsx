@@ -51,6 +51,36 @@ export function TopPlayersSection(){
  return <Screen onRefresh={load}><Muted>{translate("top.community")}</Muted><Heading>{translate("top.title")}</Heading>{loading?<ActivityIndicator color={theme.accent}/>:rows.length?rows.map((row,index)=><Card key={`${row.username}-${index}`}><View style={s.leaderRow}>{row.avatar_url?<Image source={{uri:row.avatar_url}} style={s.leaderAvatar}/>:<View style={s.leaderAvatarFallback}><Text style={s.leaderInitial}>{row.username.slice(0,1).toUpperCase()}</Text></View>}<View style={s.leaderCopy}><View style={s.between}><Subheading>#{index+1} {row.username}</Subheading><Text style={s.prize}>{money(row.total_earnings*100)}</Text></View><Muted>{row.total_matches} matches · {row.wins} wins · {row.total_kills} kills · {row.total_points} points</Muted></View></View></Card>):<Card><Muted>Leaderboard will appear after verified tournament results are linked to player accounts.</Muted></Card>}{error?<Text style={s.error}>{error}</Text>:null}</Screen>;
 }
 
+
+export function PlayerCareerSection(){
+ const [loading,setLoading]=useState(true),[error,setError]=useState("");
+ const [matches,setMatches]=useState(0),[earnings,setEarnings]=useState(0),[wins,setWins]=useState(0);
+ const load=useCallback(async()=>{
+  if(!supabase){setLoading(false);setError("App connection is not configured.");return}
+  setLoading(true);setError("");
+  const {data:user,error:userError}=await supabase.auth.getUser();
+  if(userError||!user.user){setError("Sign in to view your Player Career.");setMatches(0);setEarnings(0);setWins(0);setLoading(false);return}
+  const [participations,results]=await Promise.all([
+   supabase.from("tournament_participants").select("id,tournaments!inner(status)").eq("user_id",user.user.id).in("status",["registered","confirmed"]).eq("tournaments.status","ended"),
+   supabase.from("tournament_results").select("prize_amount,rank,finalized_at").eq("user_id",user.user.id).not("finalized_at","is",null)
+  ]);
+  if(participations.error||results.error){setError(participations.error?.message||results.error?.message||"Unable to load career statistics.");setLoading(false);return}
+  const verified=results.data??[];
+  setMatches(participations.data?.length??0);
+  setEarnings(verified.reduce((sum,row)=>sum+Number(row.prize_amount||0),0));
+  setWins(verified.filter(row=>row.rank===1).length);
+  setLoading(false);
+ },[]);
+ useEffect(()=>{void load()},[load]);
+ return <Screen onRefresh={load}><BackLink/><Muted>PLAYER PERFORMANCE</Muted><Heading>Player Career</Heading>{loading?<ActivityIndicator color={theme.accent}/>:<>
+  <View style={{flexDirection:"row",gap:10}}>
+   <View style={{flex:1}}><Card><Ionicons name="game-controller-outline" size={22} color={theme.accent}/><Text style={{color:"#fff",fontSize:25,fontWeight:"900",marginTop:8}}>{matches}</Text><Muted>MATCHES PLAYED</Muted></Card></View>
+   <View style={{flex:1}}><Card><Ionicons name="wallet-outline" size={22} color={theme.gold}/><Text style={{color:theme.gold,fontSize:23,fontWeight:"900",marginTop:8}}>{money(earnings*100)}</Text><Muted>TOTAL EARNINGS</Muted></Card></View>
+  </View>
+  <Card><View style={s.between}><Subheading>Verified wins</Subheading><Text style={s.prize}>{wins}</Text></View><Muted>Statistics use completed tournaments joined and admin-finalized results linked to your account.</Muted></Card>
+ </>}{error?<Text style={s.error}>{error}</Text>:null}</Screen>;
+}
+
 export function RulesSection(){
  const [rules,setRules]=useState("Play fairly. Do not use hacks, cheats, emulators or teaming. Follow tournament room instructions. Admin decisions after result review are final.");
  useEffect(()=>{let active=true;const load=async()=>{if(!supabase)return;const {data}=await supabase.from("website_settings").select("value").eq("key","platform_rules").maybeSingle();if(active&&data?.value)setRules(data.value)};void load();return()=>{active=false}},[]);

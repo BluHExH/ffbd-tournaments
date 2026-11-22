@@ -3,13 +3,14 @@ import type {ComponentType} from "react";
 import {Heading,Muted} from "@/components/UI";
 import {Screen} from "@/components/Screen";
 import {
-  DeveloperSection,MyMatchesSection,NotificationsSection,PlayerProfileSection,
+  DeveloperSection,MyMatchesSection,NotificationsSection,PlayerCareerSection,PlayerProfileSection,
   ResultsSection,RulesSection,TopPlayersSection
 } from "@/components/ProfileSections";
 
 const sections:Record<string,ComponentType>={
   "my-profile":PlayerProfileSection,
   "my-match":MyMatchesSection,
+  "player-career":PlayerCareerSection,
   results:ResultsSection,
   "top-players":TopPlayersSection,
   rules:RulesSection,

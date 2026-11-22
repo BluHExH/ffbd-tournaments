@@ -1,4 +1,5 @@
 export type TournamentMode = "Solo" | "Duo" | "Squad";
+export type TournamentCategory = "br_match" | "clash_squad" | "lone_wolf" | "cs_1v1_2v2" | "lw_headshot" | "cs_headshot";
 export type TournamentStatus = "live" | "upcoming" | "ended";
 export type MapName = "Bermuda" | "Purgatory" | "Kalahari" | "Alpine";
 
@@ -15,6 +16,7 @@ export interface Tournament {
   title: string;
   titleBn: string;
   mode: TournamentMode;
+  category: TournamentCategory;
   entryFee: number;
   prizePool: number;
   slots: number;
@@ -38,6 +40,7 @@ export interface TournamentRow {
   title: string;
   title_bn: string;
   mode: TournamentMode;
+  category: TournamentCategory;
   entry_fee: number;
   prize_pool: number;
   slots: number;
@@ -72,6 +75,7 @@ export function mapRowToTournament(
     title: row.title,
     titleBn: row.title_bn,
     mode: row.mode,
+    category: row.category || "br_match",
     entryFee: row.entry_fee,
     prizePool: row.prize_pool,
     slots: row.slots,

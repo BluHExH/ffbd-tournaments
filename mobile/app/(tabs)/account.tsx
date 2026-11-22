@@ -57,6 +57,7 @@ export default function Account(){
   {title:t("profile.player").toUpperCase(),items:[
    {label:t("profile.myProfile"),icon:"person-outline",section:"my-profile",description:t("profile.profileDesc")},
    {label:t("profile.myMatch"),icon:"game-controller-outline",section:"my-match",description:t("profile.matchDesc")},
+   {label:t("profile.playerCareer"),icon:"stats-chart-outline",section:"player-career",description:t("profile.playerCareerDesc")},
    {label:t("profile.results"),icon:"trophy-outline",section:"results",description:t("profile.resultsDesc")},
   ]},
   {title:t("profile.community").toUpperCase(),items:[

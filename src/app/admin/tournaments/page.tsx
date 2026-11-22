@@ -69,8 +69,8 @@ export default async function AdminTournamentsPage() {
             <div className="hidden grid-cols-12 gap-3 border-b border-white/[0.06] bg-white/[0.02] px-6 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30 md:grid">
               <div className="col-span-1">ID</div>
               <div className="col-span-3">Tournament</div>
-              <div className="col-span-1">Mode</div>
-              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Category / Mode</div>
+              <div className="col-span-1">Status</div>
               <div className="col-span-2">Prize pool</div>
               <div className="col-span-1">Slots</div>
               <div className="col-span-2 text-right">Actions</div>
@@ -81,10 +81,10 @@ export default async function AdminTournamentsPage() {
                   <div className="md:col-span-1"><span className="font-mono text-[11px] text-white/35">{item.uid}</span></div>
                   <div className="min-w-0 md:col-span-3">
                     <p className="truncate text-sm font-semibold text-white/85">{item.title}</p>
-                    <p className="mt-1 text-[10px] text-white/30 md:hidden">{item.mode} · {formatBDT(item.prize_pool)}</p>
+                    <p className="mt-1 text-[10px] text-white/30 md:hidden">{String(item.category || "br_match").replaceAll("_", " ").toUpperCase()} · {item.mode} · {formatBDT(item.prize_pool)}</p>
                   </div>
-                  <div className="hidden text-xs text-white/45 md:col-span-1 md:block">{item.mode}</div>
-                  <div className="md:col-span-2"><StatusBadge status={item.status} /></div>
+                  <div className="hidden text-xs text-white/45 md:col-span-2 md:block">{String(item.category || "br_match").replaceAll("_", " ").toUpperCase()} · {item.mode}</div>
+                  <div className="md:col-span-1"><StatusBadge status={item.status} /></div>
                   <div className="hidden text-xs font-semibold text-white/65 md:col-span-2 md:block">{formatBDT(item.prize_pool)}</div>
                   <div className="hidden text-xs text-white/45 md:col-span-1 md:block">{item.slots_filled}/{item.slots}</div>
                   <div className="flex items-center justify-end gap-2 md:col-span-2">

@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build-android-apk:
     name: Build signed Android APK with Gradle
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/common-admin-portal') && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]'))
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/common-admin-portal') && (github.event_name == 'workflow_dispatch' || contains(toJSON(github.event.commits.*.modified), 'mobile/') || contains(toJSON(github.event.commits.*.modified), '.github/workflows/build-android-gradle-apk.yml'))
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository

@@ -19,7 +19,7 @@ const CATEGORIES:{id:Category;title:string;description:string;icon:keyof typeof 
  {id:"lw_headshot",title:"LW HEADSHOT",description:"Lone Wolf headshot",icon:"locate-outline"},
  {id:"cs_headshot",title:"CS HEADSHOT",description:"Clash Squad headshot",icon:"flame-outline"},
 ];
-const CATEGORY_ART=require("../../../assets/category-sprite.png");
+import CATEGORY_ART from "../../../assets/category-sprite.png";
 const money=(n:number)=>"৳"+Number(n||0).toLocaleString("en-BD");const date=(v:string)=>new Date(v).toLocaleString("en-BD",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
 function Entrance({children,index}:{children:React.ReactNode;index:number}){const progress=useState(()=>new Animated.Value(0))[0];useEffect(()=>{Animated.timing(progress,{toValue:1,duration:420,delay:Math.min(index,12)*45,easing:Easing.out(Easing.cubic),useNativeDriver:true}).start()},[index,progress]);return <Animated.View style={{opacity:progress,transform:[{translateY:progress.interpolate({inputRange:[0,1],outputRange:[16,0]})}]}}>{children}</Animated.View>;}
 export default function Tournaments(){
